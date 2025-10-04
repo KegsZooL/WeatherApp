@@ -1,0 +1,34 @@
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/day_bg.xml" value="0.2635" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/description.xml" value="0.2635" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/hours_bg.xml" value="0.2625" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_baseline_calendar_today_24.xml" value="0.237" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_baseline_location_on_24.xml" value="0.2635" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_baseline_search_24.xml" value="0.117" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_big_blob.xml" value="0.119" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_big_blob_2.xml" value="0.2235" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_blob.xml" value="0.2335" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_humidity.xml" value="0.2635" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_pressure.xml" value="0.121" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_visibility.xml" value="0.121" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/ic_wind.xml" value="0.2635" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/layer.xml" value="0.1575" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/layer2.xml" value="0.2235" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/main_bg.xml" value="0.237" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/scroll_container_bg.xml" value="0.119" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/drawable/search_bg.xml" value="0.1" />
+        <entry key="..\:/STUDY/CSE464 (Mobile Application)/Weather/app/src/main/res/layout/activity_main.xml" value="0.19067028985507245" />
+      </map>
+    </option>
+  </component>
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_21" default="true" project-jdk-name="jbr-21" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>

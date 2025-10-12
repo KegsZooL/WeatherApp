@@ -2,108 +2,233 @@ package com.kegszool.weather;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
+import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Locale;
 
-    public GpsTracker gpsTracker;
-    static double latitude, longitude, prevLat, prevLon;
-    @SuppressLint("StaticFieldLeak")
-    static TextView location, description, humidity, pressure, mainTemp,windSpeed, visibility;
-    @SuppressLint("StaticFieldLeak")
-    static EditText search;
+public class MainActivity extends AppCompatActivity implements Weather.Callback {
 
-    static String cityName = "Chelybinsk";
-    static String prev = "";
-    static String key = "488f4111e6b7924073ff22cd896b2e2a";
-    static String error = "";
+    private static final String TAG = "MainActivity";
+    private static final String DEFAULT_CITY = "Chelyabinsk";
+    private static final String NOT_FOUND_MSG_FALLBACK = "city not found";
+    private static final long VIBRATION_DURATION_MS = 15L;
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (GpsTracker.isFromSetting){
-            finish();
-            startActivity(getIntent());
-            getLocation(latitude, longitude);
-            GpsTracker.isFromSetting=false;
-        }
-    }
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        if (GpsTracker.isFromSetting){
-            finish();
-            startActivity(getIntent());
-            getLocation(latitude,longitude);
-            GpsTracker.isFromSetting=false;
-        }
-    }
+    private GpsTracker gpsTracker;
+
+    private TextView locationView;
+    private TextView descriptionView;
+    private TextView humidityView;
+    private TextView pressureView;
+    private TextView mainTempView;
+    private TextView windSpeedView;
+    private TextView visibilityView;
+    private EditText searchView;
+
+    private Weather currentTask;
+    private String lastSearchedCity = DEFAULT_CITY;
+    private String apiKey;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        search = findViewById(R.id.search);
-        search.clearFocus();
-        location = findViewById(R.id.city);
-        description = findViewById(R.id.description);
-        mainTemp = findViewById(R.id.tempMain);
-        humidity = findViewById(R.id.humidity);
-        pressure = findViewById(R.id.pressure);
-        windSpeed = findViewById(R.id.windSpeed);
-        visibility = findViewById(R.id.visibility);
+        apiKey = BuildConfig.OPEN_WEATHER_API_KEY;
 
-        search.setOnEditorActionListener((textView, i, keyEvent) -> {
-            if (i == EditorInfo.IME_ACTION_DONE){
-                cityName = search.getText().toString();
-                if(cityName.isEmpty() || cityName.equals(" ")){
-                    Toast.makeText(getApplicationContext(), "Please enter a city!", Toast.LENGTH_SHORT).show();
-                    Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-                    vibrator.vibrate(15);
-                    getWeather(prev, key);
-                }
-                getWeather(cityName,key);
+        bindViews();
+        setupSearch();
+        fetchWeatherForCurrentLocation();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (GpsTracker.isFromSetting) {
+            GpsTracker.isFromSetting = false;
+            fetchWeatherForCurrentLocation();
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (GpsTracker.isFromSetting) {
+            GpsTracker.isFromSetting = false;
+            fetchWeatherForCurrentLocation();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (currentTask != null) {
+            currentTask.cancel(true);
+            currentTask = null;
+        }
+        if (gpsTracker != null) {
+            gpsTracker.stopUsingGPS();
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onWeatherLoaded(Weather.WeatherData data) {
+        if (data == null) {
+            onError("No weather data");
+            return;
+        }
+        if (!TextUtils.isEmpty(data.getLocation())) {
+            locationView.setText(data.getLocation());
+        }
+        descriptionView.setText(data.getDescription());
+        humidityView.setText(data.getHumidity());
+        pressureView.setText(data.getPressure());
+        mainTempView.setText(data.getTemperature());
+        windSpeedView.setText(data.getWindSpeed());
+        visibilityView.setText(data.getVisibility());
+    }
+
+    @Override
+    public void onError(String message) {
+        String displayMessage = TextUtils.isEmpty(message) ? "UNABLE TO LOAD WEATHER DATA" : message;
+        if (displayMessage.equals(NOT_FOUND_MSG_FALLBACK)) {
+            displayMessage = NOT_FOUND_MSG_FALLBACK.toUpperCase();
+            vibrate();
+        }
+        Toast.makeText(getApplicationContext(), displayMessage, Toast.LENGTH_SHORT).show();
+        Log.w(TAG, displayMessage);
+    }
+
+    private void bindViews() {
+        searchView = findViewById(R.id.search);
+        locationView = findViewById(R.id.city);
+        descriptionView = findViewById(R.id.description);
+        mainTempView = findViewById(R.id.tempMain);
+        humidityView = findViewById(R.id.humidity);
+        pressureView = findViewById(R.id.pressure);
+        windSpeedView = findViewById(R.id.windSpeed);
+        visibilityView = findViewById(R.id.visibility);
+
+        searchView.clearFocus();
+    }
+
+    private void setupSearch() {
+        searchView.setOnEditorActionListener((textView, actionId, keyEvent) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                handleCitySearch();
+                return true;
             }
             return false;
         });
-        prev = cityName;
-        getLocation(latitude,longitude);
     }
 
-    private void getWeather(String cityName, String key) {
-        Log.d("CityName: ", cityName);
-        Weather getData = new Weather();
-        getData.execute("https://api.openweathermap.org/data/2.5/forecast?q="+cityName+"&appid="+key+"&units=metric");
+    private void handleCitySearch() {
+        String inputCity = searchView.getText().toString().trim();
+        if (inputCity.isEmpty()) {
+            Toast.makeText(getApplicationContext(), "Please enter a city!", Toast.LENGTH_SHORT).show();
+            vibrate();
+            if (!TextUtils.isEmpty(lastSearchedCity)) {
+                requestWeatherByCity(lastSearchedCity);
+            }
+            return;
+        }
+        lastSearchedCity = inputCity;
+        requestWeatherByCity(inputCity);
     }
 
-    public void getLocation(Double lat, Double lon){
-        gpsTracker = new GpsTracker(MainActivity.this);
-        if(gpsTracker.canGetLocation()){
+    private void fetchWeatherForCurrentLocation() {
+        gpsTracker = new GpsTracker(this);
+        if (gpsTracker.canGetLocation()) {
             double latitude = gpsTracker.getLatitude();
             double longitude = gpsTracker.getLongitude();
-            lat = latitude;
-            lon = longitude;
-            if (lat == 0.0 && lon == 0.0){
-                startActivity(getIntent());
-                lat = gpsTracker.latitude;
-                lon = gpsTracker.longitude;
+
+            if (latitude == 0.0 && longitude == 0.0) {
+                Location lastKnownLocation = gpsTracker.getLocation();
+                if (lastKnownLocation != null) {
+                    latitude = lastKnownLocation.getLatitude();
+                    longitude = lastKnownLocation.getLongitude();
+                }
             }
-            Log.d("Lat: ", lat.toString());
-            Weather getData = new Weather();
-            getData.execute("https://api.openweathermap.org/data/2.5/forecast?lat="+lat+"&lon="+lon+"&appid="+key+"&units=metric");
-            prevLat = lat;
-            prevLon = lon;
-        }else{
+            requestWeatherByCoordinates(latitude, longitude);
+        } else {
             gpsTracker.showSettingsAlert();
+        }
+    }
+
+    private void requestWeatherByCity(String cityName) {
+        if (TextUtils.isEmpty(apiKey)) {
+            notifyMissingApiKey();
+            return;
+        }
+        try {
+            String encodedCity = URLEncoder.encode(cityName, "UTF-8");
+            String endpoint = String.format(
+                    Locale.US,
+                    "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric",
+                    encodedCity,
+                    apiKey
+            );
+            executeWeatherRequest(endpoint);
+        } catch (UnsupportedEncodingException e) {
+            Log.e(TAG, "Unable to encode city name", e);
+            onError("Unable to search for city");
+        }
+    }
+
+    private void requestWeatherByCoordinates(double latitude, double longitude) {
+        if (TextUtils.isEmpty(apiKey)) {
+            notifyMissingApiKey();
+            return;
+        }
+        String endpoint = String.format(
+                Locale.US,
+                "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric",
+                latitude,
+                longitude,
+                apiKey
+        );
+        executeWeatherRequest(endpoint);
+    }
+
+    private void executeWeatherRequest(String endpoint) {
+        if (TextUtils.isEmpty(endpoint)) {
+            onError("Invalid request");
+            return;
+        }
+        if (currentTask != null) {
+            currentTask.cancel(true);
+        }
+        currentTask = new Weather(this);
+        currentTask.execute(endpoint);
+    }
+
+    private void notifyMissingApiKey() {
+        onError("API key is missing. Please check configuration.");
+    }
+
+    private void vibrate() {
+        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator == null) {
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(
+                    VIBRATION_DURATION_MS, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            vibrator.vibrate(VIBRATION_DURATION_MS);
         }
     }
 }

@@ -2,6 +2,27 @@ plugins {
     id 'com.android.application'
 }
 
+def loadEnv() {
+    def env = [:]
+    def envFile = rootProject.file(".env")
+    if (envFile.exists()) {
+        envFile.eachLine { line ->
+            def trimmed = line.trim()
+            if (trimmed && !trimmed.startsWith("#") && trimmed.contains("=")) {
+                def delimiterIndex = trimmed.indexOf("=")
+                def key = trimmed.substring(0, delimiterIndex).trim()
+                def value = trimmed.substring(delimiterIndex + 1).trim()
+                env[key] = value
+            }
+        }
+    }
+    return env
+}
+
+def env = loadEnv()
+def openWeatherApiKeyRaw = env["OPEN_WEATHER_API_KEY"] ?: System.getenv("OPEN_WEATHER_API_KEY") ?: ""
+def openWeatherApiKey = openWeatherApiKeyRaw.replace("\\", "\\\\").replace("\"", "\\\"")
+
 android {
     compileSdk 36
 
@@ -12,6 +33,8 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "OPEN_WEATHER_API_KEY", "\"${openWeatherApiKey}\""
     }
 
     buildTypes {

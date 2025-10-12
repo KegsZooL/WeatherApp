@@ -1,287 +1,315 @@
 package com.kegszool.weather;
 
-import android.annotation.SuppressLint;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.io.InputStreamReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.DecimalFormat;
-import java.text.Format;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.Locale;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+public class Weather extends AsyncTask<String, Void, Weather.Result> {
 
-public class Weather extends AsyncTask<String, Void, String> {
+    private static final String TAG = "WeatherTask";
+    private final WeakReference<Callback> callbackRef;
 
-    String result; String error;
-    @Override
-    protected String doInBackground(String... urls) {
-        result = "";
-        URL link;
-        HttpURLConnection myConnection;
-        try{
-            link = new URL(urls[0]);
-            myConnection = (HttpURLConnection)link.openConnection();
-            InputStream in = myConnection.getInputStream();
-            InputStreamReader myStreamReader = new InputStreamReader(in);
-            int data = myStreamReader.read();
-            while (data != -1){
-                char current = (char)data;
-                result += current;
-                data = myStreamReader.read();
-            }
-            return result;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-            error = "City Not Found!";
-            Log.d("IOError: ", error);
-            MainActivity.error = error;
-        }
-        return null;
-
+    public interface Callback {
+        void onWeatherLoaded(WeatherData data);
+        void onError(String message);
     }
 
-    @SuppressLint("SetTextI18n")
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    public Weather(Callback callback) {
+        this.callbackRef = new WeakReference<>(callback);
+    }
+
     @Override
-    protected void onPostExecute(String s) {
-        super.onPostExecute(s);
+    protected Result doInBackground(String... urls) {
 
-        try{
-            JSONObject myObject = new JSONObject(result);
-            Log.d("myObject", myObject.toString());
+        if (urls == null ||
+            urls.length == 0 ||
+            urls[0] == null ||
+            urls[0].isEmpty()
+        ) {
+            return Result.error("Missing endpoint");
+        }
 
-            JSONObject city = new JSONObject(myObject.getString("city"));
-            String placeName = city.getString("name");
-            Log.d("placeName", placeName);
-            String country = city.getString("country");
-            Log.d("country", country);
-            String location = placeName+", "+country;
+        HttpURLConnection connection = null;
+        InputStream stream = null;
+        BufferedReader reader = null;
 
-            JSONArray list = myObject.getJSONArray("list");
-            Log.d("list", list.toString());
+        try {
+            URL url = new URL(urls[0]);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(15000);
 
-            JSONObject list0 = list.getJSONObject(0);
-            Log.d("list0", list0.toString());
+            int responseCode = connection.getResponseCode();
+            stream = responseCode >= HttpURLConnection.HTTP_OK &&
+                    responseCode < HttpURLConnection.HTTP_MULT_CHOICE
+                    ? connection.getInputStream()
+                    : connection.getErrorStream();
 
-            JSONArray weather = list0.getJSONArray("weather");
-            Log.d("weather", weather.toString());
-
-            String desc = weather.getJSONObject(0).getString("description");
-            desc = desc.substring(0, 1).toUpperCase() + desc.substring(1);
-            Log.d("desc", desc);
-
-
-            JSONObject main = list0.getJSONObject("main");
-            Log.d("main", main.toString());
-
-            double mainT = main.getDouble("temp");
-            Log.d("mainTemp", Double.toString(mainT));
-            int temp = (int) Math.round(mainT);
-            String mainTemp = String.valueOf(temp) ;
-
-            String humidity = main.getString("humidity") + " %";
-            Log.d("humidity", humidity);
-
-            String pressure = main.getString("pressure") + " hPa";
-            Log.d("pressure", pressure);
-
-            JSONObject wind = list0.getJSONObject("wind");
-            double windTemp = wind.getDouble("speed");
-            windTemp = windTemp * 3.6;
-            final DecimalFormat df = new DecimalFormat("0.0");
-            String windSpeed = df.format(windTemp) + " km/h";
-            Log.d("windSpeed", windSpeed);
-
-            int visible = list0.getInt("visibility");
-            int tempVisible = visible/1000;
-            String visibilityT = String.valueOf(tempVisible);
-            String visibility = visibilityT + " km";
-            Log.d("visibility", visibility);
-
-            List<String> day = new ArrayList<>();
-            List<String> dayIcon = new ArrayList<>();
-            List<String> dayTemp = new ArrayList<>();
-
-            String[] currDateCheck = list0.getString("dt_txt").split(" ");
-            String currDate = currDateCheck[0];
-            Log.d("currDate", currDate);
-
-            int counter = 0;
-            int index = 0;
-            int min = Integer.MAX_VALUE;
-
-            for (int i = 0; i < 40; i++){
-                JSONObject listTemp = list.getJSONObject(i);
-                String tempDate = listTemp.getString("dt_txt");
-                String[] tempTime = tempDate.split(" ");
-                String timeCheck = tempTime[1];
-
-                String currTempDate = tempTime[0];
-
-                JSONObject mainLoop = listTemp.getJSONObject("main");
-                String timeLoop = listTemp.getString("dt_txt");
-
-                String[] timeSplit = timeLoop.split(" ");
-                String loopDate = timeSplit[0];
-                String[] loopDateList = loopDate.split("-");
-                String dayLoop = loopDateList[2];
-
-                String timeTemp = timeSplit[1];
-                String[] hourList = timeTemp.split(":");
-                String hour = hourList[0];
-                Log.d("Hour: ", hour);
-
-                @SuppressLint("SimpleDateFormat") SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                Date date = new Date();
-                String currDateTemp = formatter.format(date);
-                String[] currTimeSplit = currDateTemp.split(" ");
-                String currDate1 = currTimeSplit[0];
-                String[] currDateList = currDate1.split("-");
-                String dayNow = currDateList[2];
-
-                String currTime = currTimeSplit[1];
-                String[] currHourList = currTime.split(":");
-                String currHour = currHourList[0];
-                Log.d("currHour: ", currHour);
-
-                int hourInt = Integer.parseInt(hour);
-                int currHourInt = Integer.parseInt(currHour);
-                int dayNowInt = Integer.parseInt(dayNow);
-                int dayLoopInt = Integer.parseInt(dayLoop);
-
-                // Taking consideration of JSON time = 00:00:00
-                if (hourInt == 0 && currHourInt != 0){
-                    hourInt = 24;
-                }
-
-                int diff = currHourInt - hourInt;
-                Log.d("Diff: ", String.valueOf(diff));
-
-
-                if (diff >= 0 && diff < min && dayNowInt == dayLoopInt){
-                    min = diff;
-                    index = i;
-                    Log.d("Index Date1: ", dayLoop);
-
-                }
-
-                if (currTempDate.compareTo(currDate) > 0 && timeCheck.compareTo("12:00:00") == 0 && counter < 4){
-                    currDate = currTempDate;
-                    counter++;
-                    Log.d("Dates", tempDate);
-                    Log.d("Counter", String.valueOf(counter));
-
-
-                    @SuppressLint("SimpleDateFormat") SimpleDateFormat simpleFormat = new SimpleDateFormat("yyyy-MM-dd");
-                    @SuppressLint("SimpleDateFormat") Format f = new SimpleDateFormat("EEEE");
-                    Date dateLoop = simpleFormat.parse(tempTime[0]);
-                    String dayFoo = f.format(dateLoop);
-                    Log.d("Day: ", dayFoo);
-                    day.add(dayFoo);
-
-
-                    double mainTempMin = mainLoop.getDouble("temp_min");
-                    Log.d("mainTempMin", Double.toString(mainTempMin));
-                    int tempCc = (int) Math.floor(mainTempMin);
-                    double mainTempMax = mainLoop.getDouble("temp_max");
-                    Log.d("mainTempMax", Double.toString(mainTempMax));
-                    int tempCc2 = (int) Math.ceil(mainTempMax);
-                    String mainTempCc = String.valueOf(tempCc);
-                    String mainTempCc2 = String.valueOf(tempCc2);
-                    String mainTempStr = mainTempCc2 + "° | " + mainTempCc + "°";
-                    dayTemp.add(mainTempStr);
-
-                    JSONArray weatherLoop = listTemp.getJSONArray("weather");
-                    String iconLoop = weatherLoop.getJSONObject(0).getString("icon");
-                    Log.d("icon", iconLoop);
-                    dayIcon.add(iconLoop);
-                }
+            if (stream == null) {
+                return Result.error("No response from server");
             }
-            Log.d("Day1: ", day.get(0));
-            Log.d("Temp1: ", dayTemp.get(0));
-            Log.d("Icon1: ", dayIcon.get(0));
 
-            Log.d("Index: ", String.valueOf(index));
-
-            int fiveHourIndex = index + 5;
-            List<String> hours = new ArrayList<>();
-            List<String> hoursIcon = new ArrayList<>();
-            List<String> hoursTemp = new ArrayList<>();
-
-            for (int i = index; i < fiveHourIndex; i++){
-                JSONObject listTemp = list.getJSONObject(i);
-                JSONObject mainLoop = listTemp.getJSONObject("main");
-
-
-                String timeLoop = listTemp.getString("dt_txt");
-                Log.d("time", timeLoop);
-                String[] loopSplit = timeLoop.split(" ");
-                String[] timeStr = loopSplit[1].split(":");
-                Log.d("s1", timeStr[0]);
-                int hourStr = Integer.parseInt(timeStr[0]);
-                String hour;
-
-                if (hourStr > 12){
-                    int tempLoop = hourStr - 12;
-                    String hourT = String.valueOf(tempLoop);
-                    hour = hourT + " PM";
-
-                }
-                else if (hourStr == 12){
-                    String hourT = String.valueOf(hourStr);
-                    hour = hourT + " PM";
-                }
-                else if (hourStr == 0){
-                    String hourT = String.valueOf(12);
-                    hour = hourT + " AM";
-                }
-                else{
-                    String hourT = String.valueOf(hourStr);
-                    hour = hourT + " AM";
-                }
-                hours.add(hour);
-
-                double hourTempD = mainLoop.getDouble("temp");
-                Log.d("mainTemp", Double.toString(hourTempD));
-                int tempInt = (int) Math.round(hourTempD);
-                String tempIntT = String.valueOf(tempInt);
-                String hourTemp = tempIntT + "°";
-                hoursTemp.add(hourTemp);
-
-                JSONArray weatherLoop = listTemp.getJSONArray("weather");
-                String hourIcon = weatherLoop.getJSONObject(0).getString("icon");
-                Log.d("icon", hourIcon);
-                hoursIcon.add(hourIcon);
+            reader = new BufferedReader(new InputStreamReader(stream));
+            StringBuilder payloadBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                payloadBuilder.append(line);
             }
-            MainActivity.location.setText(location);
-            MainActivity.mainTemp.setText(mainTemp);
-            MainActivity.description.setText(desc);
-            MainActivity.humidity.setText(humidity);
-            MainActivity.pressure.setText(pressure);
-            MainActivity.visibility.setText(visibility);
-            MainActivity.windSpeed.setText(windSpeed);
-        } catch (JSONException | ParseException e) {
-            e.printStackTrace();
-            error = "City Not Found!";
-            Log.d("JSONError: ", error);
+
+            String payload = payloadBuilder.toString();
+            if (responseCode >= HttpURLConnection.HTTP_OK &&
+                responseCode < HttpURLConnection.HTTP_MULT_CHOICE
+            ) {
+                WeatherData data = parseWeather(payload);
+                return Result.success(data);
+            } else {
+                return Result.error(parseErrorMessage(payload));
+            }
+        } catch (IOException | JSONException e) {
+            Log.e(TAG, "Failed to load weather data", e);
+            return Result.error(e.getMessage() != null ? e.getMessage() : "Failed to load weather data");
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {}
+            }
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException ignored) {}
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    @Override
+    protected void onPostExecute(Result result) {
+
+        Callback callback = callbackRef.get();
+        if (callback == null) {
+            return;
+        }
+
+        if (result == null) {
+            callback.onError("No weather data");
+        } else if (result.isSuccess()) {
+            callback.onWeatherLoaded(result.getData());
+        } else {
+            callback.onError(result.getError());
+        }
+    }
+
+    @Override
+    protected void onCancelled(Result result) {
+        notifyCancellation(result != null ? result.getError() : "Request cancelled");
+    }
+
+    @Override
+    protected void onCancelled() {
+        notifyCancellation("Request cancelled");
+    }
+
+    private void notifyCancellation(String message) {
+        Callback callback = callbackRef.get();
+        if (callback != null) {
+            callback.onError(message);
+        }
+    }
+
+    private WeatherData parseWeather(String payload) throws JSONException {
+
+        JSONObject response = new JSONObject(payload);
+        JSONObject cityObject = response.optJSONObject("city");
+        String location = parseLocation(cityObject);
+
+        JSONArray forecastList = response.optJSONArray("list");
+        if (forecastList == null || forecastList.length() == 0) {
+            throw new JSONException("Empty forecast data");
+        }
+
+        JSONObject firstForecast = forecastList.getJSONObject(0);
+        JSONArray weatherArray = firstForecast.optJSONArray("weather");
+        String description = "";
+        if (weatherArray != null && weatherArray.length() > 0) {
+            description = formatDescription(weatherArray.getJSONObject(0).optString("description", ""));
+        }
+
+        String temperature = "";
+        String humidity = "";
+        String pressure = "";
+
+        JSONObject mainObject = firstForecast.optJSONObject("main");
+        if (mainObject != null) {
+            double tempValue = mainObject.optDouble("temp", Double.NaN);
+            if (!Double.isNaN(tempValue)) {
+                temperature = String.valueOf(Math.round(tempValue));
+            }
+            if (mainObject.has("humidity")) {
+                humidity = mainObject.optInt("humidity") + " %";
+            }
+            if (mainObject.has("pressure")) {
+                pressure = mainObject.optInt("pressure") + " hPa";
+            }
+        }
+
+        JSONObject windObject = firstForecast.optJSONObject("wind");
+        String windSpeed = "";
+        if (windObject != null) {
+            double windMetersPerSecond = windObject.optDouble("speed", 0d);
+            double windKilometersPerHour = windMetersPerSecond * 3.6d;
+            windSpeed = new DecimalFormat("0.0").format(windKilometersPerHour) + " km/h";
+        }
+
+        int visibilityValue = firstForecast.optInt("visibility", 0);
+        String visibility = formatVisibility(visibilityValue);
+
+        return new WeatherData(location, description, temperature, humidity, pressure, windSpeed, visibility);
+    }
+
+    private String parseLocation(JSONObject cityObject) {
+        if (cityObject == null) {
+            return "";
+        }
+        String name = cityObject.optString("name", "");
+        String country = cityObject.optString("country", "");
+        if (!name.isEmpty() && !country.isEmpty()) {
+            return name + ", " + country;
+        } else if (!name.isEmpty()) {
+            return name;
+        } else if (!country.isEmpty()) {
+            return country;
+        }
+        return "";
+    }
+
+    private String formatVisibility(int visibilityMeters) {
+        int visibilityKilometers = Math.max(0, visibilityMeters / 1000);
+        return visibilityKilometers + " km";
+    }
+
+    private String formatDescription(String rawDescription) {
+        if (rawDescription == null || rawDescription.isEmpty()) {
+            return "";
+        }
+        String firstLetter = rawDescription.substring(0, 1).toUpperCase(Locale.getDefault());
+        String remaining = rawDescription.length() > 1 ? rawDescription.substring(1) : "";
+        return firstLetter + remaining;
+    }
+
+    private String parseErrorMessage(String payload) {
+        if (payload == null || payload.isEmpty()) {
+            return "Unable to load weather data";
+        }
+        try {
+            JSONObject errorObject = new JSONObject(payload);
+            if (errorObject.has("message")) {
+                return errorObject.optString("message", "Unable to load weather data");
+            }
+        } catch (JSONException ignored) {
+        }
+        return "Unable to load weather data";
+    }
+
+    static final class WeatherData {
+        private final String location;
+        private final String description;
+        private final String temperature;
+        private final String humidity;
+        private final String pressure;
+        private final String windSpeed;
+        private final String visibility;
+
+        WeatherData(
+            String location,
+            String description,
+            String temperature,
+            String humidity,
+            String pressure,
+            String windSpeed,
+            String visibility
+        ) {
+            this.location = location;
+            this.description = description;
+            this.temperature = temperature;
+            this.humidity = humidity;
+            this.pressure = pressure;
+            this.windSpeed = windSpeed;
+            this.visibility = visibility;
+        }
+
+        String getLocation() {
+            return location;
+        }
+
+        String getDescription() {
+            return description;
+        }
+
+        String getTemperature() {
+            return temperature;
+        }
+
+        String getHumidity() {
+            return humidity;
+        }
+
+        String getPressure() {
+            return pressure;
+        }
+
+        String getWindSpeed() {
+            return windSpeed;
+        }
+
+        String getVisibility() {
+            return visibility;
+        }
+    }
+
+    static final class Result {
+
+        private final WeatherData data;
+        private final String error;
+
+        private Result(WeatherData data, String error) {
+            this.data = data;
+            this.error = error;
+        }
+
+        static Result success(WeatherData data) {
+            return new Result(data, null);
+        }
+
+        static Result error(String message) {
+            return new Result(null, message);
+        }
+
+        boolean isSuccess() {
+            return data != null;
+        }
+
+        WeatherData getData() {
+            return data;
+        }
+
+        String getError() {
+            return error;
         }
     }
 }

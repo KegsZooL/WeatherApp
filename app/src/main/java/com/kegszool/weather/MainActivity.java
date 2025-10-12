@@ -13,8 +13,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.graphics.drawable.AnimationDrawable;
+
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -26,12 +29,13 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity implements Weather.Callback {
 
     private static final String TAG = "MainActivity";
-    private static final String DEFAULT_CITY = "Chelyabinsk";
+    private static final String DEFAULT_CITY = "Moscow";
     private static final String NOT_FOUND_MSG_FALLBACK = "city not found";
     private static final long VIBRATION_DURATION_MS = 15L;
 
     private GpsTracker gpsTracker;
 
+    private ConstraintLayout rootLayout;
     private TextView locationView;
     private TextView descriptionView;
     private TextView humidityView;
@@ -44,17 +48,22 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private Weather currentTask;
     private String lastSearchedCity = DEFAULT_CITY;
     private String apiKey;
+    private int currentBackgroundResId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-    	ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-        	Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-        	v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
-        	return WindowInsetsCompat.CONSUMED;
-    	});
+        rootLayout = findViewById(R.id.main);
+        if (rootLayout != null) {
+            currentBackgroundResId = R.drawable.main_bg;
+            ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
+                Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
         apiKey = BuildConfig.OPEN_WEATHER_API_KEY;
 
         bindViews();
@@ -98,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         mainTempView.setText(data.getTemperature());
         windSpeedView.setText(data.getWindSpeed());
         visibilityView.setText(data.getVisibility());
+        updateBackground(data);
     }
 
     @Override
@@ -212,6 +222,37 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         }
         currentTask = new Weather(this);
         currentTask.execute(endpoint);
+    }
+
+    private void updateBackground(Weather.WeatherData data) {
+        if (rootLayout == null) {
+            return;
+        }
+        int resolvedResId = resolveBackgroundResource(data.getConditionId());
+        if (resolvedResId == 0 || resolvedResId == currentBackgroundResId) {
+            return;
+        }
+        rootLayout.setBackgroundResource(resolvedResId);
+        currentBackgroundResId = resolvedResId;
+    }
+
+    private int resolveBackgroundResource(int conditionId) {
+        if (conditionId >= 200 && conditionId < 300) {
+            return R.drawable.bg_thunderstorm;
+        } else if (conditionId >= 300 && conditionId < 400) {
+            return R.drawable.bg_drizzle;
+        } else if (conditionId >= 500 && conditionId < 600) {
+            return R.drawable.bg_rain;
+        } else if (conditionId >= 600 && conditionId < 700) {
+            return R.drawable.bg_snow;
+        } else if (conditionId >= 700 && conditionId < 800) {
+            return R.drawable.bg_mist;
+        } else if (conditionId == 800) {
+            return R.drawable.bg_clear;
+        } else if (conditionId > 800 && conditionId < 900) {
+            return R.drawable.bg_clouds;
+        }
+        return R.drawable.main_bg;
     }
 
     private void notifyMissingApiKey() {

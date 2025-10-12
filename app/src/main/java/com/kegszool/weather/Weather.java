@@ -146,8 +146,11 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         JSONObject firstForecast = forecastList.getJSONObject(0);
         JSONArray weatherArray = firstForecast.optJSONArray("weather");
         String description = "";
+        int conditionId = 0;
         if (weatherArray != null && weatherArray.length() > 0) {
-            description = formatDescription(weatherArray.getJSONObject(0).optString("description", ""));
+            JSONObject weatherDetails = weatherArray.getJSONObject(0);
+            description = formatDescription(weatherDetails.optString("description", ""));
+            conditionId = weatherDetails.optInt("id", 0);
         }
 
         String temperature = "";
@@ -179,7 +182,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         int visibilityValue = firstForecast.optInt("visibility", 0);
         String visibility = formatVisibility(visibilityValue);
 
-        return new WeatherData(location, description, temperature, humidity, pressure, windSpeed, visibility);
+        return new WeatherData(location, description, conditionId, temperature, humidity, pressure, windSpeed, visibility);
     }
 
     private String parseLocation(JSONObject cityObject) {
@@ -229,6 +232,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
     static final class WeatherData {
         private final String location;
         private final String description;
+        private final int conditionId;
         private final String temperature;
         private final String humidity;
         private final String pressure;
@@ -238,6 +242,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         WeatherData(
             String location,
             String description,
+            int conditionId,
             String temperature,
             String humidity,
             String pressure,
@@ -246,6 +251,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         ) {
             this.location = location;
             this.description = description;
+            this.conditionId = conditionId;
             this.temperature = temperature;
             this.humidity = humidity;
             this.pressure = pressure;
@@ -259,6 +265,10 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
 
         String getDescription() {
             return description;
+        }
+
+        int getConditionId() {
+            return conditionId;
         }
 
         String getTemperature() {

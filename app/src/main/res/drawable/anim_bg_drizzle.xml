@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="false">
+    <item android:drawable="@drawable/bg_drizzle_frame1" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame2" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame3" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame4" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame5" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame6" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame7" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame8" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame9" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame10" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame11" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame12" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame13" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame14" android:duration="5000"/>
+    <item android:drawable="@drawable/bg_drizzle_frame15" android:duration="5000"/>
+</animation-list>

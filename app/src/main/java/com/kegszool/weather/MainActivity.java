@@ -1,6 +1,8 @@
 package com.kegszool.weather;
 
 import android.content.Context;
+import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,8 +14,6 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import android.graphics.drawable.AnimationDrawable;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -234,25 +234,39 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         }
         rootLayout.setBackgroundResource(resolvedResId);
         currentBackgroundResId = resolvedResId;
+        startBackgroundAnimation();
     }
 
     private int resolveBackgroundResource(int conditionId) {
         if (conditionId >= 200 && conditionId < 300) {
-            return R.drawable.bg_thunderstorm;
+            return R.drawable.anim_bg_thunderstorm;
         } else if (conditionId >= 300 && conditionId < 400) {
-            return R.drawable.bg_drizzle;
+            return R.drawable.anim_bg_drizzle;
         } else if (conditionId >= 500 && conditionId < 600) {
-            return R.drawable.bg_rain;
+            return R.drawable.anim_bg_rain;
         } else if (conditionId >= 600 && conditionId < 700) {
-            return R.drawable.bg_snow;
+            return R.drawable.anim_bg_snow;
         } else if (conditionId >= 700 && conditionId < 800) {
-            return R.drawable.bg_mist;
+            return R.drawable.anim_bg_mist;
         } else if (conditionId == 800) {
-            return R.drawable.bg_clear;
+            return R.drawable.anim_bg_clear;
         } else if (conditionId > 800 && conditionId < 900) {
-            return R.drawable.bg_clouds;
+            return R.drawable.anim_bg_clouds;
         }
         return R.drawable.main_bg;
+    }
+
+    private void startBackgroundAnimation() {
+        Drawable background = rootLayout != null ? rootLayout.getBackground() : null;
+        if (!(background instanceof AnimationDrawable)) {
+            return;
+        }
+        AnimationDrawable animationDrawable = (AnimationDrawable) background;
+        animationDrawable.setEnterFadeDuration(40);
+        animationDrawable.setExitFadeDuration(4200);
+        animationDrawable.stop();
+        animationDrawable.setVisible(true, true);
+        animationDrawable.start();
     }
 
     private void notifyMissingApiKey() {

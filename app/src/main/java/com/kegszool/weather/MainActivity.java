@@ -1,7 +1,5 @@
 package com.kegszool.weather;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.location.Location;
 import android.os.Build;
@@ -14,6 +12,12 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -44,8 +48,13 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-
+    	ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        	Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+        	v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+        	return WindowInsetsCompat.CONSUMED;
+    	});
         apiKey = BuildConfig.OPEN_WEATHER_API_KEY;
 
         bindViews();
@@ -59,16 +68,6 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         if (GpsTracker.isFromSetting) {
             GpsTracker.isFromSetting = false;
             fetchWeatherForCurrentLocation();
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (GpsTracker.isFromSetting) {
-            GpsTracker.isFromSetting = false;
-            fetchWeatherForCurrentLocation();
-        } else {
-            super.onBackPressed();
         }
     }
 

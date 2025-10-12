@@ -9,4 +9,5 @@ plugins {
 }
 ext {
     OPEN_WEATHER_API_KEY = '488f4111e6b7924073ff22cd896b2e2a'
+    appcompatVersion = '1.7.1'
 }

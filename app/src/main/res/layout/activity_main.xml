@@ -189,7 +189,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/roboto_condensed_regular"
             android:text="@string/c"
-            android:textColor="#FFE700"
+            android:textColor="#FF677DAB"
             android:textSize="50sp"
             android:textStyle="bold"
             app:layout_constraintTop_toTopOf="parent"

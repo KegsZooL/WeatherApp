@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.DrawableRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
@@ -325,6 +326,10 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
                     contentDescription = forecast.getDayLabel();
                 }
                 holder.iconView.setContentDescription(contentDescription);
+
+                int iconRes = resolveForecastIcon(forecast.getConditionId());
+                holder.iconView.setImageResource(iconRes);
+
             } else {
                 if (holder.root != null) {
                     holder.root.setVisibility(View.INVISIBLE);
@@ -336,6 +341,26 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             }
         }
     }
+
+ 	@DrawableRes
+  	private int resolveForecastIcon(int conditionId) {
+      	if (conditionId >= 200 && conditionId < 300) {
+          	return R.drawable.wth_thunderstorm;
+      	} else if (conditionId >= 300 && conditionId < 400) {
+          	return R.drawable.wth_drizzle;
+      	} else if (conditionId >= 500 && conditionId < 600) {
+          	return R.drawable.wth_rainy;
+      	} else if (conditionId >= 600 && conditionId < 700) {
+          	return R.drawable.wth_snowy;
+      	} else if (conditionId >= 700 && conditionId < 800) {
+          	return R.drawable.wth_mist;
+      	} else if (conditionId == 800) {
+          	return R.drawable.wth_clear;
+      	} else if (conditionId > 800 && conditionId < 900) {
+          	return R.drawable.wth_clouds;
+      	}
+      	return R.drawable.wth_clouds;
+      }
 
     private View getParentOrSelf(View view) {
         if (view == null) {

@@ -10,8 +10,11 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewParent;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +27,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements Weather.Callback {
@@ -44,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private TextView windSpeedView;
     private TextView visibilityView;
     private EditText searchView;
+    private ForecastViewHolder[] forecastHolders;
 
     private Weather currentTask;
     private String lastSearchedCity = DEFAULT_CITY;
@@ -107,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         mainTempView.setText(data.getTemperature());
         windSpeedView.setText(data.getWindSpeed());
         visibilityView.setText(data.getVisibility());
+        renderDailyForecasts(data.getDailyForecasts());
         updateBackground(data);
     }
 
@@ -130,6 +136,31 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         pressureView = findViewById(R.id.pressure);
         windSpeedView = findViewById(R.id.windSpeed);
         visibilityView = findViewById(R.id.visibility);
+
+        TextView day1Label = findViewById(R.id.day1);
+        ImageView day1Icon = findViewById(R.id.day1img);
+        TextView day1Temp = findViewById(R.id.day1temp);
+
+        TextView day2Label = findViewById(R.id.day2);
+        ImageView day2Icon = findViewById(R.id.day2img);
+        TextView day2Temp = findViewById(R.id.day2temp);
+
+        TextView day3Label = findViewById(R.id.day3);
+        ImageView day3Icon = findViewById(R.id.day3img);
+        TextView day3Temp = findViewById(R.id.day3temp);
+
+        TextView day4Label = findViewById(R.id.day4);
+        ImageView day4Icon = findViewById(R.id.day4img);
+        TextView day4Temp = findViewById(R.id.day4temp);
+
+        forecastHolders = new ForecastViewHolder[]{
+                new ForecastViewHolder(getParentOrSelf(day1Label), day1Label, day1Icon, day1Temp),
+                new ForecastViewHolder(getParentOrSelf(day2Label), day2Label, day2Icon, day2Temp),
+                new ForecastViewHolder(getParentOrSelf(day3Label), day3Label, day3Icon, day3Temp),
+                new ForecastViewHolder(getParentOrSelf(day4Label), day4Label, day4Icon, day4Temp)
+        };
+
+        renderDailyForecasts(null);
 
         searchView.clearFocus();
     }
@@ -267,6 +298,68 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         animationDrawable.stop();
         animationDrawable.setVisible(true, true);
         animationDrawable.start();
+    }
+
+    private void renderDailyForecasts(List<Weather.WeatherData.DailyForecast> forecasts) {
+        if (forecastHolders == null || forecastHolders.length == 0) {
+            return;
+        }
+
+        int itemsCount = forecasts != null ? Math.min(forecasts.size(), forecastHolders.length) : 0;
+
+        for (int i = 0; i < forecastHolders.length; i++) {
+            ForecastViewHolder holder = forecastHolders[i];
+            if (holder == null) {
+                continue;
+            }
+            if (i < itemsCount) {
+                Weather.WeatherData.DailyForecast forecast = forecasts.get(i);
+                if (holder.root != null) {
+                    holder.root.setVisibility(View.VISIBLE);
+                }
+                holder.dayLabel.setText(forecast.getDayLabel());
+                holder.temperatureView.setText(forecast.getTemperature());
+
+                String contentDescription = forecast.getDescription();
+                if (TextUtils.isEmpty(contentDescription)) {
+                    contentDescription = forecast.getDayLabel();
+                }
+                holder.iconView.setContentDescription(contentDescription);
+            } else {
+                if (holder.root != null) {
+                    holder.root.setVisibility(View.INVISIBLE);
+                }
+                holder.dayLabel.setText("");
+                holder.temperatureView.setText("");
+                holder.iconView.setImageDrawable(null);
+                holder.iconView.setContentDescription(null);
+            }
+        }
+    }
+
+    private View getParentOrSelf(View view) {
+        if (view == null) {
+            return null;
+        }
+        ViewParent parent = view.getParent();
+        if (parent instanceof View) {
+            return (View) parent;
+        }
+        return view;
+    }
+
+    private static final class ForecastViewHolder {
+        final View root;
+        final TextView dayLabel;
+        final ImageView iconView;
+        final TextView temperatureView;
+
+        ForecastViewHolder(View root, TextView dayLabel, ImageView iconView, TextView temperatureView) {
+            this.root = root != null ? root : dayLabel;
+            this.dayLabel = dayLabel;
+            this.iconView = iconView;
+            this.temperatureView = temperatureView;
+        }
     }
 
     private void notifyMissingApiKey() {

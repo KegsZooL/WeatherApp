@@ -11,7 +11,15 @@ import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -182,7 +190,134 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         int visibilityValue = firstForecast.optInt("visibility", 0);
         String visibility = formatVisibility(visibilityValue);
 
-        return new WeatherData(location, description, conditionId, temperature, humidity, pressure, windSpeed, visibility);
+        List<WeatherData.DailyForecast> dailyForecasts = buildDailyForecasts(forecastList);
+
+        return new WeatherData(
+                location,
+                description,
+                conditionId,
+                temperature,
+                humidity,
+                pressure,
+                windSpeed,
+                visibility,
+                dailyForecasts
+        );
+    }
+
+    private List<WeatherData.DailyForecast> buildDailyForecasts(JSONArray forecastList) {
+        if (forecastList == null || forecastList.length() == 0) {
+            return Collections.emptyList();
+        }
+
+        final int maxDays = 4;
+        Map<String, JSONObject> dayToForecast = new LinkedHashMap<>();
+
+        for (int i = 0; i < forecastList.length(); i++) {
+            JSONObject item = forecastList.optJSONObject(i);
+            if (item == null) {
+                continue;
+            }
+            String dtTxt = item.optString("dt_txt", "");
+            if (dtTxt.length() < 10) {
+                continue;
+            }
+            String dateKey = dtTxt.substring(0, 10);
+            JSONObject existing = dayToForecast.get(dateKey);
+            if (existing == null) {
+                dayToForecast.put(dateKey, item);
+                continue;
+            }
+            boolean newIsMidday = dtTxt.contains("12:00:00");
+            if (!newIsMidday) {
+                continue;
+            }
+            String existingDt = existing.optString("dt_txt", "");
+            if (!existingDt.contains("12:00:00")) {
+                dayToForecast.put(dateKey, item);
+            }
+        }
+
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+        SimpleDateFormat fallbackInputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        SimpleDateFormat dayFormat = new SimpleDateFormat("EEE", Locale.getDefault());
+
+        List<WeatherData.DailyForecast> results = new ArrayList<>();
+
+        for (Map.Entry<String, JSONObject> entry : dayToForecast.entrySet()) {
+            if (results.size() >= maxDays) {
+                break;
+            }
+
+            JSONObject forecastObject = entry.getValue();
+            if (forecastObject == null) {
+                continue;
+            }
+
+            String dayLabel = formatDayLabel(forecastObject.optString("dt_txt", ""),
+                    entry.getKey(), inputFormat, fallbackInputFormat, dayFormat);
+
+            JSONObject mainObject = forecastObject.optJSONObject("main");
+            String temperature = "";
+            if (mainObject != null) {
+                double tempValue = mainObject.optDouble("temp", Double.NaN);
+                if (!Double.isNaN(tempValue)) {
+                    temperature = Math.round(tempValue) + "\u00B0";
+                }
+            }
+
+            JSONArray dayWeatherArray = forecastObject.optJSONArray("weather");
+            int dayConditionId = 0;
+            String dayDescription = "";
+            if (dayWeatherArray != null && dayWeatherArray.length() > 0) {
+                JSONObject weatherDetails = dayWeatherArray.optJSONObject(0);
+                if (weatherDetails != null) {
+                    dayConditionId = weatherDetails.optInt("id", 0);
+                    dayDescription = formatDescription(weatherDetails.optString("description", ""));
+                }
+            }
+
+            if (temperature.isEmpty() && dayDescription.isEmpty()) {
+                continue;
+            }
+
+            results.add(new WeatherData.DailyForecast(dayLabel, temperature, dayConditionId, dayDescription));
+        }
+
+        if (results.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return Collections.unmodifiableList(results);
+    }
+
+    private String formatDayLabel(
+            String dateTime,
+            String fallbackDate,
+            SimpleDateFormat inputFormat,
+            SimpleDateFormat fallbackInputFormat,
+            SimpleDateFormat outputFormat
+    ) {
+        Date parsedDate = null;
+        if (dateTime != null && !dateTime.isEmpty()) {
+            try {
+                parsedDate = inputFormat.parse(dateTime);
+            } catch (ParseException ignored) {
+            }
+        }
+
+        if (parsedDate == null && fallbackDate != null && !fallbackDate.isEmpty()) {
+            try {
+                parsedDate = fallbackInputFormat.parse(fallbackDate);
+            } catch (ParseException ignored) {
+            }
+        }
+
+        if (parsedDate == null) {
+            return fallbackDate != null ? fallbackDate : "";
+        }
+
+        return outputFormat.format(parsedDate);
     }
 
     private String parseLocation(JSONObject cityObject) {
@@ -238,6 +373,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         private final String pressure;
         private final String windSpeed;
         private final String visibility;
+        private final List<DailyForecast> dailyForecasts;
 
         WeatherData(
             String location,
@@ -247,7 +383,8 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
             String humidity,
             String pressure,
             String windSpeed,
-            String visibility
+            String visibility,
+            List<DailyForecast> dailyForecasts
         ) {
             this.location = location;
             this.description = description;
@@ -257,6 +394,11 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
             this.pressure = pressure;
             this.windSpeed = windSpeed;
             this.visibility = visibility;
+            if (dailyForecasts == null || dailyForecasts.isEmpty()) {
+                this.dailyForecasts = Collections.emptyList();
+            } else {
+                this.dailyForecasts = Collections.unmodifiableList(new ArrayList<>(dailyForecasts));
+            }
         }
 
         String getLocation() {
@@ -289,6 +431,40 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
 
         String getVisibility() {
             return visibility;
+        }
+
+        List<DailyForecast> getDailyForecasts() {
+            return dailyForecasts;
+        }
+
+        static final class DailyForecast {
+            private final String dayLabel;
+            private final String temperature;
+            private final int conditionId;
+            private final String description;
+
+            DailyForecast(String dayLabel, String temperature, int conditionId, String description) {
+                this.dayLabel = dayLabel != null ? dayLabel : "";
+                this.temperature = temperature != null ? temperature : "";
+                this.conditionId = conditionId;
+                this.description = description != null ? description : "";
+            }
+
+            String getDayLabel() {
+                return dayLabel;
+            }
+
+            String getTemperature() {
+                return temperature;
+            }
+
+            int getConditionId() {
+                return conditionId;
+            }
+
+            String getDescription() {
+                return description;
+            }
         }
     }
 

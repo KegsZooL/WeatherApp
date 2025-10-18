@@ -8,4 +8,6 @@
     <string name="temp">30°</string>
     <string name="cloudy">Cloudy</string>
     <string name="search_city">Search city....</string>
+    <string name="weather_notification_channel_name">Weather updates</string>
+    <string name="weather_notification_channel_description">Shows current weather in the status bar</string>
 </resources>

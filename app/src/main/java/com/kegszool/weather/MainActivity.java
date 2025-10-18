@@ -115,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         visibilityView.setText(data.getVisibility());
         renderDailyForecasts(data.getDailyForecasts());
         updateBackground(data);
+        WeatherNotificationManager.showWeatherNotification(this, data);
     }
 
     @Override
@@ -126,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         }
         Toast.makeText(getApplicationContext(), displayMessage, Toast.LENGTH_SHORT).show();
         Log.w(TAG, displayMessage);
+        WeatherNotificationManager.cancel(this);
     }
 
     private void bindViews() {

@@ -1,20 +1,11 @@
 <resources>
     <string name="app_name">Weather</string>
-    <string name="san_francisco"> </string>
-    <string name="_20">26</string>
     <string name="c">°C</string>
     <string name="_5_km_h">5 km/h</string>
     <string name="_1000_pa">1000 hPa</string>
     <string name="_70">70 %</string>
     <string name="_10_km">10 km</string>
-    <string name="today">Today</string>
-    <string name="_10_am">10 AM</string>
-    <string name="_19">29° | 30°</string>
-    <string name="_21">25°</string>
+    <string name="temp">30°</string>
     <string name="cloudy">Cloudy</string>
-    <string name="saturday">Saturday</string>
-    <string name="wednesday">Wednesday</string>
-    <string name="monday">Monday</string>
-    <string name="sunday">Sunday</string>
     <string name="search_city">Search city....</string>
 </resources>

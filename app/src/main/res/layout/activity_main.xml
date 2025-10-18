@@ -61,7 +61,7 @@
             android:fontFamily="@font/roboto_condensed_regular"
             android:textColor="@color/white"
             android:textAlignment="center"
-            android:text="@string/_20"
+            android:text="@string/temp"
             android:textSize="200sp"
             android:textStyle="bold"
             tools:ignore="RtlCompat"
@@ -219,7 +219,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/saturday"
+                    android:text="Day"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 
@@ -237,7 +237,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/_19"
+                    android:text="@string/temp"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 
@@ -261,7 +261,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/sunday"
+                    android:text="Day"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 
@@ -279,7 +279,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/_19"
+                    android:text="@string/temp"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 
@@ -303,7 +303,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/monday"
+                    android:text="Day"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 
@@ -321,7 +321,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/_19"
+                    android:text="@string/temp"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 
@@ -343,7 +343,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/wednesday"
+                    android:text="Day"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 
@@ -362,7 +362,7 @@
                     android:layout_height="wrap_content"
                     android:padding="5dp"
                     android:textColor="@color/white"
-                    android:text="@string/_19"
+                    android:text="@string/temp"
                     android:textSize="25sp"
                     android:textStyle="bold" />
 

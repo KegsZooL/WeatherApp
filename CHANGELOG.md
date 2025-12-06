@@ -1,4 +1,4 @@
-## Changelog
+[0.0.1]
 
 - Added city suggestions with internal ru/en map and AutoCompleteTextView.
 - Styled dropdown/suggestions and added text outlines for search and city views.

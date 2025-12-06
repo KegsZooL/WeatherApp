@@ -3,6 +3,10 @@ package com.kegszool.weather;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +14,7 @@ import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,14 +25,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.util.zip.GZIPInputStream;
 
 public class Weather extends AsyncTask<String, Void, Weather.Result> {
 
     private static final String TAG = "WeatherTask";
+    private static final int IO_BUFFER_SIZE = 8 * 1024;
+    private static final int CONNECT_TIMEOUT_MS = 15000;
+    private static final int READ_TIMEOUT_MS = 15000;
+    private static final ThreadLocal<DecimalFormat> WIND_SPEED_FORMAT = ThreadLocal.withInitial(
+            () -> new DecimalFormat("0.0"));
+    private static final int MAX_FORECAST_DAYS = 4;
+    private static final ThreadLocal<SimpleDateFormat> INPUT_FORMAT = ThreadLocal.withInitial(
+            () -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US));
+    private static final ThreadLocal<SimpleDateFormat> FALLBACK_INPUT_FORMAT = ThreadLocal.withInitial(
+            () -> new SimpleDateFormat("yyyy-MM-dd", Locale.US));
+    private static final ThreadLocal<SimpleDateFormat> DAY_FORMAT = ThreadLocal.withInitial(
+            () -> new SimpleDateFormat("EEE", Locale.getDefault()));
     private final WeakReference<Callback> callbackRef;
 
     public interface Callback {
@@ -57,8 +71,9 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         try {
             URL url = new URL(urls[0]);
             connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(15000);
-            connection.setReadTimeout(15000);
+            connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            connection.setReadTimeout(READ_TIMEOUT_MS);
+            connection.setRequestProperty("Accept-Encoding", "gzip");
 
             int responseCode = connection.getResponseCode();
             stream = responseCode >= HttpURLConnection.HTTP_OK &&
@@ -70,7 +85,8 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
                 return Result.error("No response from server");
             }
 
-            reader = new BufferedReader(new InputStreamReader(stream));
+            stream = maybeUnzip(connection, stream);
+            reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8), IO_BUFFER_SIZE);
             StringBuilder payloadBuilder = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -140,6 +156,17 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         }
     }
 
+    private InputStream maybeUnzip(HttpURLConnection connection, InputStream source) throws IOException {
+        if (connection == null || source == null) {
+            return source;
+        }
+        String encoding = connection.getContentEncoding();
+        if (encoding != null && "gzip".equalsIgnoreCase(encoding)) {
+            return new GZIPInputStream(source, IO_BUFFER_SIZE);
+        }
+        return source;
+    }
+
     private WeatherData parseWeather(String payload) throws JSONException {
 
         JSONObject response = new JSONObject(payload);
@@ -184,7 +211,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         if (windObject != null) {
             double windMetersPerSecond = windObject.optDouble("speed", 0d);
             double windKilometersPerHour = windMetersPerSecond * 3.6d;
-            windSpeed = new DecimalFormat("0.0").format(windKilometersPerHour) + " km/h";
+            windSpeed = WIND_SPEED_FORMAT.get().format(windKilometersPerHour) + " km/h";
         }
 
         int visibilityValue = firstForecast.optInt("visibility", 0);
@@ -210,7 +237,6 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
             return Collections.emptyList();
         }
 
-        final int maxDays = 4;
         Map<String, JSONObject> dayToForecast = new LinkedHashMap<>();
 
         for (int i = 0; i < forecastList.length(); i++) {
@@ -238,14 +264,14 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
             }
         }
 
-        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-        SimpleDateFormat fallbackInputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        SimpleDateFormat dayFormat = new SimpleDateFormat("EEE", Locale.getDefault());
+        SimpleDateFormat inputFormat = INPUT_FORMAT.get();
+        SimpleDateFormat fallbackInputFormat = FALLBACK_INPUT_FORMAT.get();
+        SimpleDateFormat dayFormat = DAY_FORMAT.get();
 
         List<WeatherData.DailyForecast> results = new ArrayList<>();
 
         for (Map.Entry<String, JSONObject> entry : dayToForecast.entrySet()) {
-            if (results.size() >= maxDays) {
+            if (results.size() >= MAX_FORECAST_DAYS) {
                 break;
             }
 

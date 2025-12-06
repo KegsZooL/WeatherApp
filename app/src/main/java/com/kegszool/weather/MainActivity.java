@@ -129,6 +129,8 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         renderDailyForecasts(data.getDailyForecasts());
         updateBackground(data);
         WeatherNotificationManager.showWeatherNotification(this, data);
+        LastWeatherStorage.save(this, data);
+        WeatherWidgetProvider.requestUpdate(this);
     }
 
     @Override

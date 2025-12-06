@@ -1,5 +1,5 @@
 # WeatherApp
-![Banner](asset/banner.png)
+<img src="asset/banner.png" alt="Banner" width="256" height="256" />
 
 ## Overview
 Android weather application that fetches forecasts from OpenWeather, supports ru/en UI, and offers both in-app search and map-based location picking. Provides a home screen widget with multi-day forecast.

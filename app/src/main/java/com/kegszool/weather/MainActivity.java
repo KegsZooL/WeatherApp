@@ -2,6 +2,7 @@ package com.kegszool.weather;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private static final long VIBRATION_DURATION_MS = 15L;
     private static final String CITY_SUGGESTION_SEPARATOR = " / ";
     private static final Map<String, String> POPULAR_CITIES = createPopularCities();
+    private static final int REQUEST_CODE_MAP_PICK = 1001;
 
     private GpsTracker gpsTracker;
 
@@ -178,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
         renderDailyForecasts(null);
         setupMetricTooltips();
+        setupCityClickListener();
 
         searchView.clearFocus();
     }
@@ -343,6 +346,33 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             return R.string.tooltip_pressure;
         }
         return 0;
+    }
+
+    private void setupCityClickListener() {
+        if (locationView != null) {
+            locationView.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, MapPickerActivity.class);
+                startActivityForResult(intent, REQUEST_CODE_MAP_PICK);
+            });
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_MAP_PICK && resultCode == RESULT_OK && data != null) {
+            double lat = data.getDoubleExtra(MapPickerActivity.EXTRA_LATITUDE, Double.NaN);
+            double lng = data.getDoubleExtra(MapPickerActivity.EXTRA_LONGITUDE, Double.NaN);
+            String label = data.getStringExtra(MapPickerActivity.EXTRA_LABEL);
+            if (!Double.isNaN(lat) && !Double.isNaN(lng)) {
+                String displayLabel = !TextUtils.isEmpty(label)
+                        ? label
+                        : String.format(Locale.getDefault(), "%.4f, %.4f", lat, lng);
+                locationView.setText(displayLabel);
+                lastSearchedCity = displayLabel;
+                requestWeatherByCoordinates(lat, lng);
+            }
+        }
     }
 
     private static Map<String, String> createPopularCities() {

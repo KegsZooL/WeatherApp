@@ -5,3 +5,4 @@
 - Optimized weather fetch: gzip support, buffered UTF-8 reader, reused formatters to cut allocations.
 - Added RU localisation
 - Added tooltips for weather metrics
+- Google map integration

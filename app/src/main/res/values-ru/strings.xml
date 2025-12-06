@@ -16,4 +16,10 @@
     <string name="tooltip_humidity">Относительная влажность, %</string>
     <string name="tooltip_visibility">Видимость, км</string>
     <string name="tooltip_pressure">Атмосферное давление, гПа</string>
+    <string name="map_confirm">Использовать эту точку</string>
+    <string name="map_instructions">Нажмите на карту, чтобы выбрать место</string>
+    <string name="map_selection_label">Выбрано: %1$s</string>
+    <string name="map_no_selection">Точка не выбрана</string>
+    <string name="map_marker_title">Выбранная точка</string>
+    <string name="map_selection_fallback">%1$.4f, %2$.4f</string>
 </resources>

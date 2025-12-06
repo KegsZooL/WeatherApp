@@ -15,4 +15,10 @@
     <string name="tooltip_humidity">Relative humidity, percent</string>
     <string name="tooltip_visibility">Visibility distance, km</string>
     <string name="tooltip_pressure">Atmospheric pressure, hPa</string>
+    <string name="map_confirm">Use this location</string>
+    <string name="map_instructions">Tap on the map to choose a location</string>
+    <string name="map_selection_label">Selected: %1$s</string>
+    <string name="map_no_selection">No location selected</string>
+    <string name="map_marker_title">Chosen location</string>
+    <string name="map_selection_fallback">%1$.4f, %2$.4f</string>
 </resources>

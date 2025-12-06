@@ -209,8 +209,9 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     private void setupCitySuggestions() {
-        citySuggestionsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, new ArrayList<>());
+        citySuggestionsAdapter = new ArrayAdapter<>(this, R.layout.item_city_suggestion, R.id.citySuggestionText, new ArrayList<>());
         searchView.setAdapter(citySuggestionsAdapter);
+        searchView.setDropDownBackgroundResource(R.drawable.autocomplete_dropdown_bg);
         searchView.setThreshold(1);
         searchView.setOnItemClickListener((parent, view, position, id) -> {
             String suggestion = citySuggestionsAdapter.getItem(position);

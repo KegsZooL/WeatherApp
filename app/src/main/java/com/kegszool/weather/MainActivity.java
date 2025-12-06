@@ -1,5 +1,6 @@
 package com.kegszool.weather;
 
+import android.Manifest;
 import android.content.Context;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
@@ -8,18 +9,22 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewParent;
 import android.view.inputmethod.EditorInfo;
-import android.widget.EditText;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.DrawableRes;
+import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
@@ -28,8 +33,12 @@ import androidx.core.view.WindowInsetsCompat;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements Weather.Callback {
 
@@ -37,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private static final String DEFAULT_CITY = "Moscow";
     private static final String NOT_FOUND_MSG_FALLBACK = "city not found";
     private static final long VIBRATION_DURATION_MS = 15L;
+    private static final String CITY_SUGGESTION_SEPARATOR = " / ";
+    private static final Map<String, String> POPULAR_CITIES = createPopularCities();
 
     private GpsTracker gpsTracker;
 
@@ -48,8 +59,9 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private TextView mainTempView;
     private TextView windSpeedView;
     private TextView visibilityView;
-    private EditText searchView;
+    private AutoCompleteTextView searchView;
     private ForecastViewHolder[] forecastHolders;
+    private ArrayAdapter<String> citySuggestionsAdapter;
 
     private Weather currentTask;
     private String lastSearchedCity = DEFAULT_CITY;
@@ -99,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     @Override
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     public void onWeatherLoaded(Weather.WeatherData data) {
         if (data == null) {
             onError("No weather data");
@@ -169,6 +182,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     private void setupSearch() {
+        setupCitySuggestions();
         searchView.setOnEditorActionListener((textView, actionId, keyEvent) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 handleCitySearch();
@@ -188,8 +202,138 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             }
             return;
         }
-        lastSearchedCity = inputCity;
-        requestWeatherByCity(inputCity);
+        String normalizedCity = normalizeCityInput(inputCity);
+        lastSearchedCity = normalizedCity;
+        searchView.dismissDropDown();
+        requestWeatherByCity(normalizedCity);
+    }
+
+    private void setupCitySuggestions() {
+        citySuggestionsAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, new ArrayList<>());
+        searchView.setAdapter(citySuggestionsAdapter);
+        searchView.setThreshold(1);
+        searchView.setOnItemClickListener((parent, view, position, id) -> {
+            String suggestion = citySuggestionsAdapter.getItem(position);
+            if (suggestion == null) {
+                return;
+            }
+            String englishName = extractEnglishCityName(suggestion);
+            if (!TextUtils.isEmpty(englishName)) {
+                searchView.setText(englishName);
+                searchView.setSelection(englishName.length());
+            }
+            handleCitySearch();
+        });
+        searchView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus && citySuggestionsAdapter.getCount() > 0) {
+                searchView.showDropDown();
+            }
+        });
+        searchView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                filterCitySuggestions(s != null ? s.toString() : "");
+            }
+        });
+        filterCitySuggestions("");
+    }
+
+    private void filterCitySuggestions(String query) {
+        if (citySuggestionsAdapter == null) {
+            return;
+        }
+        String normalized = query != null ? query.trim().toLowerCase(Locale.ROOT) : "";
+        citySuggestionsAdapter.clear();
+        for (Map.Entry<String, String> entry : POPULAR_CITIES.entrySet()) {
+            String englishName = entry.getKey();
+            String russianName = entry.getValue();
+            if (TextUtils.isEmpty(normalized)
+                    || startsWithLocalized(englishName, normalized)
+                    || startsWithLocalized(russianName, normalized)) {
+                citySuggestionsAdapter.add(buildSuggestionLabel(englishName, russianName));
+            }
+        }
+        citySuggestionsAdapter.notifyDataSetChanged();
+        if (!TextUtils.isEmpty(query) && citySuggestionsAdapter.getCount() > 0 && searchView.hasFocus()) {
+            searchView.showDropDown();
+        }
+    }
+
+    private String normalizeCityInput(String cityInput) {
+        if (TextUtils.isEmpty(cityInput)) {
+            return cityInput;
+        }
+        String englishFromLabel = extractEnglishCityName(cityInput);
+        if (!TextUtils.isEmpty(englishFromLabel) && POPULAR_CITIES.containsKey(englishFromLabel)) {
+            return englishFromLabel;
+        }
+        for (Map.Entry<String, String> entry : POPULAR_CITIES.entrySet()) {
+            if (cityInput.equalsIgnoreCase(entry.getKey()) || cityInput.equalsIgnoreCase(entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return !TextUtils.isEmpty(englishFromLabel) ? englishFromLabel : cityInput;
+    }
+
+    private String extractEnglishCityName(String suggestion) {
+        if (TextUtils.isEmpty(suggestion)) {
+            return suggestion;
+        }
+        int separatorIndex = suggestion.indexOf(CITY_SUGGESTION_SEPARATOR);
+        if (separatorIndex > 0) {
+            return suggestion.substring(0, separatorIndex).trim();
+        }
+        return suggestion.trim();
+    }
+
+    private String buildSuggestionLabel(String englishName, String russianName) {
+        return englishName + CITY_SUGGESTION_SEPARATOR + russianName;
+    }
+
+    private boolean startsWithLocalized(String value, String prefix) {
+        if (TextUtils.isEmpty(value) || TextUtils.isEmpty(prefix)) {
+            return false;
+        }
+        return value.toLowerCase(Locale.ROOT).startsWith(prefix.toLowerCase(Locale.ROOT));
+    }
+
+    private static Map<String, String> createPopularCities() {
+        Map<String, String> cities = new LinkedHashMap<>();
+        cities.put("Moscow", "Москва");
+        cities.put("Saint Petersburg", "Санкт-Петербург");
+        cities.put("Novosibirsk", "Новосибирск");
+        cities.put("Yekaterinburg", "Екатеринбург");
+        cities.put("Kazan", "Казань");
+        cities.put("Nizhny Novgorod", "Нижний Новгород");
+        cities.put("Chelyabinsk", "Челябинск");
+        cities.put("Samara", "Самара");
+        cities.put("Omsk", "Омск");
+        cities.put("Rostov-on-Don", "Ростов-на-Дону");
+        cities.put("Ufa", "Уфа");
+        cities.put("Krasnoyarsk", "Красноярск");
+        cities.put("Perm", "Пермь");
+        cities.put("Voronezh", "Воронеж");
+        cities.put("Volgograd", "Волгоград");
+        cities.put("Krasnodar", "Краснодар");
+        cities.put("Sochi", "Сочи");
+        cities.put("Kaliningrad", "Калининград");
+        cities.put("Vladivostok", "Владивосток");
+        cities.put("Murmansk", "Мурманск");
+        cities.put("Khabarovsk", "Хабаровск");
+        cities.put("Irkutsk", "Иркутск");
+        cities.put("Yakutsk", "Якутск");
+        cities.put("Astrakhan", "Астрахань");
+        cities.put("Saratov", "Саратов");
+        cities.put("Petropavlovsk-Kamchatsky", "Петропавловск-Камчатский");
+        return Collections.unmodifiableMap(cities);
     }
 
     private void fetchWeatherForCurrentLocation() {
@@ -361,7 +505,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
       	} else if (conditionId > 800 && conditionId < 900) {
           	return R.drawable.wth_clouds;
       	}
-      	return R.drawable.wth_clouds;
+        return R.drawable.wth_clouds;
       }
 
     private View getParentOrSelf(View view) {

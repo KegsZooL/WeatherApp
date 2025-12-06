@@ -177,6 +177,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         };
 
         renderDailyForecasts(null);
+        setupMetricTooltips();
 
         searchView.clearFocus();
     }
@@ -308,6 +309,40 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             return false;
         }
         return value.toLowerCase(Locale.ROOT).startsWith(prefix.toLowerCase(Locale.ROOT));
+    }
+
+    private void setupMetricTooltips() {
+        View.OnClickListener tooltipListener = view -> {
+            int messageResId = getTooltipMessageResId(view.getId());
+            if (messageResId != 0) {
+                Toast.makeText(getApplicationContext(), messageResId, Toast.LENGTH_SHORT).show();
+            }
+        };
+        if (windSpeedView != null) {
+            windSpeedView.setOnClickListener(tooltipListener);
+        }
+        if (humidityView != null) {
+            humidityView.setOnClickListener(tooltipListener);
+        }
+        if (visibilityView != null) {
+            visibilityView.setOnClickListener(tooltipListener);
+        }
+        if (pressureView != null) {
+            pressureView.setOnClickListener(tooltipListener);
+        }
+    }
+
+    private int getTooltipMessageResId(int viewId) {
+        if (viewId == R.id.windSpeed) {
+            return R.string.tooltip_wind_speed;
+        } else if (viewId == R.id.humidity) {
+            return R.string.tooltip_humidity;
+        } else if (viewId == R.id.visibility) {
+            return R.string.tooltip_visibility;
+        } else if (viewId == R.id.pressure) {
+            return R.string.tooltip_pressure;
+        }
+        return 0;
     }
 
     private static Map<String, String> createPopularCities() {

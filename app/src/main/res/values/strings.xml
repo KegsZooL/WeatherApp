@@ -11,4 +11,8 @@
     <string name="city_placeholder">City</string>
     <string name="weather_notification_channel_name">Weather updates</string>
     <string name="weather_notification_channel_description">Shows current weather in the status bar</string>
+    <string name="tooltip_wind_speed">Wind speed in km/h</string>
+    <string name="tooltip_humidity">Relative humidity, percent</string>
+    <string name="tooltip_visibility">Visibility distance, km</string>
+    <string name="tooltip_pressure">Atmospheric pressure, hPa</string>
 </resources>

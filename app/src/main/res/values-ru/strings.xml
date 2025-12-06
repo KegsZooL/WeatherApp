@@ -12,4 +12,8 @@
     <string name="city_placeholder">Город</string>
     <string name="weather_notification_channel_name">Обновления погоды</string>
     <string name="weather_notification_channel_description">Показывает текущую погоду в статус-баре</string>
+    <string name="tooltip_wind_speed">Скорость ветра, км/ч</string>
+    <string name="tooltip_humidity">Относительная влажность, %</string>
+    <string name="tooltip_visibility">Видимость, км</string>
+    <string name="tooltip_pressure">Атмосферное давление, гПа</string>
 </resources>

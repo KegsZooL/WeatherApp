@@ -212,9 +212,13 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         citySuggestionsAdapter = new ArrayAdapter<>(this, R.layout.item_city_suggestion, R.id.citySuggestionText, new ArrayList<>());
         searchView.setAdapter(citySuggestionsAdapter);
         searchView.setDropDownBackgroundResource(R.drawable.autocomplete_dropdown_bg);
-        searchView.setThreshold(1);
+        searchView.setThreshold(0);
         searchView.setOnItemClickListener((parent, view, position, id) -> {
-            String suggestion = citySuggestionsAdapter.getItem(position);
+            if (parent == null || position < 0 || position >= parent.getCount()) {
+                return;
+            }
+            Object item = parent.getItemAtPosition(position);
+            String suggestion = item != null ? item.toString() : null;
             if (suggestion == null) {
                 return;
             }

@@ -33,6 +33,12 @@
             android:id="@+id/confirmSelection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/map_confirm" />
+            android:textStyle="bold"
+            android:text="@string/map_confirm"
+            android:background="@drawable/description"
+            android:textColor="@color/white"
+            android:textSize="22sp"
+            android:fontFamily="@font/roboto_condensed_regular"
+            android:stateListAnimator="@null" />
     </LinearLayout>
 </FrameLayout>

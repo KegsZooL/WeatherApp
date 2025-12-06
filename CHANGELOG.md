@@ -6,3 +6,4 @@
 - Added RU localisation
 - Added tooltips for weather metrics
 - Google map integration
+- Home screen widget with any forecasts

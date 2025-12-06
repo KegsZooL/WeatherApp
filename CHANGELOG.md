@@ -1,9 +1,8 @@
 [0.0.1]
 
-- Added city suggestions with internal ru/en map and AutoCompleteTextView.
-- Styled dropdown/suggestions and added text outlines for search and city views.
-- Optimized weather fetch: gzip support, buffered UTF-8 reader, reused formatters to cut allocations.
-- Added RU localisation
-- Added tooltips for weather metrics
-- Google map integration
-- Home screen widget with any forecasts
+- City search with ru/en suggestions via AutoCompleteTextView.
+- Weather fetching optimized (gzip, buffered UTF-8 reader, reused formatters).
+- RU/EN localization for UI and tooltips on metrics.
+- Map picker to select location and load forecast by coordinates.
+- Home screen widget showing multi-day forecast with icons.
+- Styled dropdowns, search/city text outlines, and map confirm button tweaks

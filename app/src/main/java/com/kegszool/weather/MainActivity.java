@@ -35,8 +35,6 @@ import androidx.core.view.WindowInsetsCompat;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -48,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private static final String NOT_FOUND_MSG_FALLBACK = "city not found";
     private static final long VIBRATION_DURATION_MS = 15L;
     private static final String CITY_SUGGESTION_SEPARATOR = " / ";
-    private static final Map<String, String> POPULAR_CITIES = createPopularCities();
+    private static final Map<String, String> POPULAR_CITIES = PopularCities.getCities();
     private static final int REQUEST_CODE_MAP_PICK = 1001;
 
     private GpsTracker gpsTracker;
@@ -375,36 +373,6 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         }
     }
 
-    private static Map<String, String> createPopularCities() {
-        Map<String, String> cities = new LinkedHashMap<>();
-        cities.put("Moscow", "Москва");
-        cities.put("Saint Petersburg", "Санкт-Петербург");
-        cities.put("Novosibirsk", "Новосибирск");
-        cities.put("Yekaterinburg", "Екатеринбург");
-        cities.put("Kazan", "Казань");
-        cities.put("Nizhny Novgorod", "Нижний Новгород");
-        cities.put("Chelyabinsk", "Челябинск");
-        cities.put("Samara", "Самара");
-        cities.put("Omsk", "Омск");
-        cities.put("Rostov-on-Don", "Ростов-на-Дону");
-        cities.put("Ufa", "Уфа");
-        cities.put("Krasnoyarsk", "Красноярск");
-        cities.put("Perm", "Пермь");
-        cities.put("Voronezh", "Воронеж");
-        cities.put("Volgograd", "Волгоград");
-        cities.put("Krasnodar", "Краснодар");
-        cities.put("Sochi", "Сочи");
-        cities.put("Kaliningrad", "Калининград");
-        cities.put("Vladivostok", "Владивосток");
-        cities.put("Murmansk", "Мурманск");
-        cities.put("Khabarovsk", "Хабаровск");
-        cities.put("Irkutsk", "Иркутск");
-        cities.put("Yakutsk", "Якутск");
-        cities.put("Astrakhan", "Астрахань");
-        cities.put("Saratov", "Саратов");
-        cities.put("Petropavlovsk-Kamchatsky", "Петропавловск-Камчатский");
-        return Collections.unmodifiableMap(cities);
-    }
 
     private void fetchWeatherForCurrentLocation() {
         gpsTracker = new GpsTracker(this);

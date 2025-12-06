@@ -34,4 +34,6 @@ Android weather application that fetches forecasts from OpenWeather, supports ru
 - `app/build.gradle` — dependencies and API key wiring via `.env` (`OPEN_WEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`).
 
 ## Preview
-<video src="asset/preview.mp4" width="640" height="360" controls></video>
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/2cd9db0d-1863-486b-bdf6-b2de62b1fa0e"></video>
+</div>

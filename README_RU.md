@@ -1,5 +1,7 @@
 # WeatherApp
-<img src="asset/banner.png" alt="Баннер" width="256" height="256" />
+<div align="center">
+  <img src="asset/banner.png" alt="Banner" height="388" />
+</div>
 
 ## Общее описание
 Android‑приложение погоды, получает данные из OpenWeather, поддерживает русскую и английскую локализацию, поиск и выбор локации на карте. Имеет виджет рабочего стола с многодневным прогнозом.
@@ -30,3 +32,6 @@ Android‑приложение погоды, получает данные из 
 - `app/src/main/res/values*/` — строки, цвета и локализованные ресурсы.
 - `app/src/main/res/xml/` — конфигурация виджета.
 - `app/build.gradle` — зависимости и подключение ключей из `.env` (`OPEN_WEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`).
+
+## Превью
+<video src="asset/preview.mp4" width="640" height="360" controls></video>

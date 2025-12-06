@@ -1,5 +1,7 @@
 # WeatherApp
-<img src="asset/banner.png" alt="Banner" width="256" height="256" />
+<div align="center">
+  <img src="asset/banner.png" alt="Banner" height="388" />
+</div>
 
 ## Overview
 Android weather application that fetches forecasts from OpenWeather, supports ru/en UI, and offers both in-app search and map-based location picking. Provides a home screen widget with multi-day forecast.
@@ -30,3 +32,6 @@ Android weather application that fetches forecasts from OpenWeather, supports ru
 - `app/src/main/res/values*/` — strings, colors, and localized resources.
 - `app/src/main/res/xml/` — widget provider config.
 - `app/build.gradle` — dependencies and API key wiring via `.env` (`OPEN_WEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`).
+
+## Preview
+<video src="asset/preview.mp4" width="640" height="360" controls></video>

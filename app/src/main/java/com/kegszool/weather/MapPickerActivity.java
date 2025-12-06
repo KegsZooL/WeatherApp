@@ -2,6 +2,8 @@ package com.kegszool.weather;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,6 +30,7 @@ public class MapPickerActivity extends FragmentActivity implements OnMapReadyCal
     private GoogleMap googleMap;
     private Marker currentMarker;
     private TextView selectionInfo;
+    private View overlayContainer;
     private double selectedLat = Double.NaN;
     private double selectedLng = Double.NaN;
     private String selectedLabel = "";
@@ -38,6 +41,7 @@ public class MapPickerActivity extends FragmentActivity implements OnMapReadyCal
         setContentView(R.layout.activity_map_picker);
 
         selectionInfo = findViewById(R.id.selectionInfo);
+        overlayContainer = findViewById(R.id.mapOverlayContainer);
         Button confirmButton = findViewById(R.id.confirmSelection);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.mapFragment);
@@ -55,6 +59,7 @@ public class MapPickerActivity extends FragmentActivity implements OnMapReadyCal
         googleMap = map;
         googleMap.getUiSettings().setZoomControlsEnabled(true);
         googleMap.setOnMapClickListener(this);
+        applyMapPaddingWhenReady();
     }
 
     @Override
@@ -80,6 +85,28 @@ public class MapPickerActivity extends FragmentActivity implements OnMapReadyCal
         }
         selectionInfo.setText(getString(R.string.map_selection_label, selectedLabel));
         googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+    }
+
+    private void applyMapPaddingWhenReady() {
+        if (overlayContainer == null) {
+            return;
+        }
+        overlayContainer.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (overlayContainer.getHeight() > 0) {
+                    applyMapPadding();
+                    overlayContainer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                }
+            }
+        });
+    }
+
+    private void applyMapPadding() {
+        if (googleMap == null || overlayContainer == null) {
+            return;
+        }
+        googleMap.setPadding(0, 0, 0, overlayContainer.getHeight());
     }
 
     private String formatLatLng(double latitude, double longitude) {

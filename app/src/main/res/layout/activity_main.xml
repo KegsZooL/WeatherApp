@@ -48,6 +48,7 @@
             android:textColor="@color/white"
             android:paddingStart="10dp"
             android:paddingLeft="10dp"
+            android:text="@string/city_placeholder"
             android:textSize="20sp"
             android:textStyle="bold"
             android:shadowColor="@color/black"

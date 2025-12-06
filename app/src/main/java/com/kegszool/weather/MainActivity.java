@@ -365,9 +365,10 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             String encodedCity = URLEncoder.encode(cityName, "UTF-8");
             String endpoint = String.format(
                     Locale.US,
-                    "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric",
+                    "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric%s",
                     encodedCity,
-                    apiKey
+                    apiKey,
+                    getApiLanguageQuery()
             );
             executeWeatherRequest(endpoint);
         } catch (UnsupportedEncodingException e) {
@@ -383,12 +384,21 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         }
         String endpoint = String.format(
                 Locale.US,
-                "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric",
+                "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric%s",
                 latitude,
                 longitude,
-                apiKey
+                apiKey,
+                getApiLanguageQuery()
         );
         executeWeatherRequest(endpoint);
+    }
+
+    private String getApiLanguageQuery() {
+        String language = Locale.getDefault().getLanguage();
+        if ("ru".equalsIgnoreCase(language)) {
+            return "&lang=ru";
+        }
+        return "";
     }
 
     private void executeWeatherRequest(String endpoint) {

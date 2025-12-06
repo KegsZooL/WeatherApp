@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Погода</string>
+    <string name="c">°C</string>
+    <string name="_5_km_h">5 км/ч</string>
+    <string name="_1000_pa">1000 гПа</string>
+    <string name="_70">70 %</string>
+    <string name="_10_km">10 км</string>
+    <string name="temp">30°</string>
+    <string name="cloudy">Облачно</string>
+    <string name="search_city">Поиск города...</string>
+    <string name="city_placeholder">Город</string>
+    <string name="weather_notification_channel_name">Обновления погоды</string>
+    <string name="weather_notification_channel_description">Показывает текущую погоду в статус-баре</string>
+</resources>

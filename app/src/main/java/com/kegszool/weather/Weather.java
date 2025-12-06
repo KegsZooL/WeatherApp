@@ -191,6 +191,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         String temperature = "";
         String humidity = "";
         String pressure = "";
+        boolean isRussian = isRussianLocale();
 
         JSONObject mainObject = firstForecast.optJSONObject("main");
         if (mainObject != null) {
@@ -202,7 +203,7 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
                 humidity = mainObject.optInt("humidity") + " %";
             }
             if (mainObject.has("pressure")) {
-                pressure = mainObject.optInt("pressure") + " hPa";
+                pressure = mainObject.optInt("pressure") + (isRussian ? " гПа" : " hPa");
             }
         }
 
@@ -211,11 +212,11 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         if (windObject != null) {
             double windMetersPerSecond = windObject.optDouble("speed", 0d);
             double windKilometersPerHour = windMetersPerSecond * 3.6d;
-            windSpeed = WIND_SPEED_FORMAT.get().format(windKilometersPerHour) + " km/h";
+            windSpeed = WIND_SPEED_FORMAT.get().format(windKilometersPerHour) + (isRussian ? " км/ч" : " km/h");
         }
 
         int visibilityValue = firstForecast.optInt("visibility", 0);
-        String visibility = formatVisibility(visibilityValue);
+        String visibility = formatVisibility(visibilityValue, isRussian);
 
         List<WeatherData.DailyForecast> dailyForecasts = buildDailyForecasts(forecastList);
 
@@ -362,9 +363,9 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         return "";
     }
 
-    private String formatVisibility(int visibilityMeters) {
+    private String formatVisibility(int visibilityMeters, boolean isRussian) {
         int visibilityKilometers = Math.max(0, visibilityMeters / 1000);
-        return visibilityKilometers + " km";
+        return visibilityKilometers + (isRussian ? " км" : " km");
     }
 
     private String formatDescription(String rawDescription) {
@@ -374,6 +375,11 @@ public class Weather extends AsyncTask<String, Void, Weather.Result> {
         String firstLetter = rawDescription.substring(0, 1).toUpperCase(Locale.getDefault());
         String remaining = rawDescription.length() > 1 ? rawDescription.substring(1) : "";
         return firstLetter + remaining;
+    }
+
+    private boolean isRussianLocale() {
+        String language = Locale.getDefault().getLanguage();
+        return "ru".equalsIgnoreCase(language);
     }
 
     private String parseErrorMessage(String payload) {

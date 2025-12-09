@@ -28,6 +28,10 @@ def googleMapsKey = googleMapsKeyRaw.replace("\\", "\\\\").replace("\"", "\\\"")
 android {
     compileSdk 36
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId "com.topurayhan.weather"
         minSdk 24

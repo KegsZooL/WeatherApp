@@ -20,6 +20,3 @@ local.properties
 gradlew
 gradlew.bat
 gradle
-settings.gradle
-gradle.properties
-build.gradle

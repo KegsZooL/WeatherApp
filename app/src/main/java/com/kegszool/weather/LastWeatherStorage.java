@@ -19,15 +19,15 @@ final class LastWeatherStorage {
     private LastWeatherStorage() {
     }
 
-    static void save(Context context, Weather.WeatherData data) {
+    static void save(Context context, WeatherData data) {
         if (context == null || data == null) {
             return;
         }
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         prefs.edit()
-                .putString(KEY_CITY, data.getLocation())
-                .putString(KEY_TEMPERATURE, data.getTemperature())
-                .putInt(KEY_CONDITION_ID, data.getConditionId())
+                .putString(KEY_CITY, data.location())
+                .putString(KEY_TEMPERATURE, data.temperature())
+                .putInt(KEY_CONDITION_ID, data.conditionId())
                 .putString(KEY_FORECASTS, serializeForecasts(data))
                 .apply();
     }
@@ -78,22 +78,22 @@ final class LastWeatherStorage {
         }
     }
 
-    private static String serializeForecasts(Weather.WeatherData data) {
-        if (data == null || data.getDailyForecasts() == null) {
+    private static String serializeForecasts(WeatherData data) {
+        if (data == null || data.dailyForecasts() == null) {
             return "";
         }
         JSONArray array = new JSONArray();
-        final int max = Math.min(4, data.getDailyForecasts().size());
+        final int max = Math.min(4, data.dailyForecasts().size());
         for (int i = 0; i < max; i++) {
-            Weather.WeatherData.DailyForecast forecast = data.getDailyForecasts().get(i);
+            WeatherData.DailyForecast forecast = data.dailyForecasts().get(i);
             if (forecast == null) {
                 continue;
             }
             JSONObject obj = new JSONObject();
             try {
-                obj.put("day", forecast.getDayLabel());
-                obj.put("temp", forecast.getTemperature());
-                obj.put("cond", forecast.getConditionId());
+                obj.put("day", forecast.dayLabel());
+                obj.put("temp", forecast.temperature());
+                obj.put("cond", forecast.conditionId());
                 array.put(obj);
             } catch (JSONException ignored) {
             }

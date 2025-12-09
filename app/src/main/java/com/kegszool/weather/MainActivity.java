@@ -49,8 +49,11 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private static final String DEFAULT_CITY = "Moscow";
     private static final String NOT_FOUND_MSG_FALLBACK = "city not found";
     private static final String CITY_SUGGESTION_SEPARATOR = " / ";
-    private static final String ENDPOINT_FORMAT_FOR_CITY = "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric%s";
-    private static final String ENDPOINT_FORMAT_FOR_COORDINATES = "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric%s";
+
+    private static final String ENDPOINT_FORMAT_FOR_CITY =
+            "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric%s";
+    private static final String ENDPOINT_FORMAT_FOR_COORDINATES =
+            "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric%s";
 
     private static final long VIBRATION_DURATION_MS = 15L;
     private static final int REQUEST_CODE_MAP_PICK = 1001;
@@ -113,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     @Override
     protected void onDestroy() {
         if (currentTask != null) {
-            currentTask.cancel(true);
+            currentTask.cancel();
             currentTask = null;
         }
         if (gpsTracker != null) {
@@ -124,21 +127,23 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
     @Override
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    public void onWeatherLoaded(Weather.WeatherData data) {
+    public void onWeatherLoaded(WeatherData data) {
+
         if (data == null) {
             onError("No weather data");
             return;
         }
-        if (!TextUtils.isEmpty(data.getLocation())) {
-            locationView.setText(data.getLocation());
+        if (!TextUtils.isEmpty(data.location())) {
+            locationView.setText(data.location());
         }
-        descriptionView.setText(data.getDescription());
-        humidityView.setText(data.getHumidity());
-        pressureView.setText(data.getPressure());
-        mainTempView.setText(data.getTemperature());
-        windSpeedView.setText(data.getWindSpeed());
-        visibilityView.setText(data.getVisibility());
-        renderDailyForecasts(data.getDailyForecasts());
+        descriptionView.setText(data.description());
+        humidityView.setText(data.humidity());
+        pressureView.setText(data.pressure());
+        mainTempView.setText(data.temperature());
+        windSpeedView.setText(data.windSpeed());
+        visibilityView.setText(data.visibility());
+
+        renderDailyForecasts(data.dailyForecasts());
         updateBackground(data);
 
         WeatherNotificationManager.showWeatherNotification(this, data);
@@ -309,22 +314,32 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     private void filterCitySuggestions(String query) {
+
         if (citySuggestionsAdapter == null) {
             return;
         }
-        String normalized = query != null ? query.trim().toLowerCase(Locale.ROOT) : "";
+
+        String normalizedQuery = query != null
+                ? query.trim().toLowerCase(Locale.ROOT)
+                : "";
+
         citySuggestionsAdapter.clear();
+
         for (Map.Entry<String, String> entry : POPULAR_CITIES.entrySet()) {
             String englishName = entry.getKey();
             String russianName = entry.getValue();
-            if (TextUtils.isEmpty(normalized)
-                    || startsWithLocalized(englishName, normalized)
-                    || startsWithLocalized(russianName, normalized)) {
+            if (TextUtils.isEmpty(normalizedQuery) ||
+                    startsWithLocalized(englishName, normalizedQuery) ||
+                    startsWithLocalized(russianName, normalizedQuery)
+            ) {
                 citySuggestionsAdapter.add(buildSuggestionLabel(englishName, russianName));
             }
         }
         citySuggestionsAdapter.notifyDataSetChanged();
-        if (!TextUtils.isEmpty(query) && citySuggestionsAdapter.getCount() > 0 && searchView.hasFocus()) {
+        if (!TextUtils.isEmpty(query) &&
+                citySuggestionsAdapter.getCount() > 0 &&
+                searchView.hasFocus()
+        ) {
             searchView.showDropDown();
         }
     }
@@ -368,7 +383,8 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         if (TextUtils.isEmpty(value) || TextUtils.isEmpty(prefix)) {
             return false;
         }
-        return value.toLowerCase(Locale.ROOT).startsWith(prefix.toLowerCase(Locale.ROOT));
+        return value.toLowerCase(Locale.ROOT).startsWith(
+                prefix.toLowerCase(Locale.ROOT));
     }
 
     private void setupMetricTooltips() {
@@ -421,10 +437,14 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_MAP_PICK && resultCode == RESULT_OK && data != null) {
+        if (requestCode == REQUEST_CODE_MAP_PICK &&
+                resultCode == RESULT_OK &&
+                data != null
+        ) {
             double lat = data.getDoubleExtra(MapPickerActivity.EXTRA_LATITUDE, Double.NaN);
             double lng = data.getDoubleExtra(MapPickerActivity.EXTRA_LONGITUDE, Double.NaN);
             String label = data.getStringExtra(MapPickerActivity.EXTRA_LABEL);
+
             if (!Double.isNaN(lat) && !Double.isNaN(lng)) {
                 String displayLabel = !TextUtils.isEmpty(label)
                         ? label
@@ -440,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private void fetchWeatherForCurrentLocation() {
         gpsTracker = new GpsTracker(this);
         if (gpsTracker.canGetLocation()) {
+
             double latitude = gpsTracker.getLatitude();
             double longitude = gpsTracker.getLongitude();
 
@@ -507,17 +528,17 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             return;
         }
         if (currentTask != null) {
-            currentTask.cancel(true);
+            currentTask.cancel();
         }
         currentTask = new Weather(this);
         currentTask.execute(endpoint);
     }
 
-    private void updateBackground(Weather.WeatherData data) {
+    private void updateBackground(WeatherData data) {
         if (rootLayout == null) {
             return;
         }
-        int resolvedResId = resolveBackgroundResource(data.getConditionId());
+        int resolvedResId = resolveBackgroundResource(data.conditionId());
         if (resolvedResId == 0 || resolvedResId == currentBackgroundResId) {
             return;
         }
@@ -547,10 +568,9 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
     private void startBackgroundAnimation() {
         Drawable background = rootLayout != null ? rootLayout.getBackground() : null;
-        if (!(background instanceof AnimationDrawable)) {
+        if (!(background instanceof AnimationDrawable animationDrawable)) {
             return;
         }
-        AnimationDrawable animationDrawable = (AnimationDrawable) background;
         animationDrawable.setEnterFadeDuration(40);
         animationDrawable.setExitFadeDuration(4200);
         animationDrawable.stop();
@@ -558,34 +578,36 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         animationDrawable.start();
     }
 
-    private void renderDailyForecasts(List<Weather.WeatherData.DailyForecast> forecasts) {
+    private void renderDailyForecasts(List<WeatherData.DailyForecast> forecasts) {
 
         if (forecastHolders == null || forecastHolders.length == 0) {
             return;
         }
 
-        int itemsCount = forecasts != null ? Math.min(forecasts.size(), forecastHolders.length) : 0;
+        int itemsCount = forecasts != null
+                ? Math.min(forecasts.size(), forecastHolders.length)
+                : 0;
 
         for (int i = 0; i < forecastHolders.length; i++) {
+
             ForecastViewHolder holder = forecastHolders[i];
-            if (holder == null) {
-                continue;
-            }
+            if (holder == null) { continue; }
+
             if (i < itemsCount) {
-                Weather.WeatherData.DailyForecast forecast = forecasts.get(i);
+                WeatherData.DailyForecast forecast = forecasts.get(i);
                 if (holder.root != null) {
                     holder.root.setVisibility(View.VISIBLE);
                 }
-                holder.dayLabel.setText(forecast.getDayLabel());
-                holder.temperatureView.setText(forecast.getTemperature());
+                holder.dayLabel.setText(forecast.dayLabel());
+                holder.temperatureView.setText(forecast.temperature());
 
-                String contentDescription = forecast.getDescription();
+                String contentDescription = forecast.description();
                 if (TextUtils.isEmpty(contentDescription)) {
-                    contentDescription = forecast.getDayLabel();
+                    contentDescription = forecast.dayLabel();
                 }
                 holder.iconView.setContentDescription(contentDescription);
 
-                int iconRes = resolveForecastIcon(forecast.getConditionId());
+                int iconRes = resolveForecastIcon(forecast.conditionId());
                 holder.iconView.setImageResource(iconRes);
 
             } else {
@@ -632,12 +654,18 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     private static final class ForecastViewHolder {
-        final View root;
-        final TextView dayLabel;
-        final ImageView iconView;
-        final TextView temperatureView;
 
-        ForecastViewHolder(View root, TextView dayLabel, ImageView iconView, TextView temperatureView) {
+        private final View root;
+        private final TextView dayLabel;
+        private final ImageView iconView;
+        private final TextView temperatureView;
+
+        ForecastViewHolder(
+                View root,
+                TextView dayLabel,
+                ImageView iconView,
+                TextView temperatureView
+        ) {
             this.root = root != null ? root : dayLabel;
             this.dayLabel = dayLabel;
             this.iconView = iconView;
@@ -647,9 +675,8 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
     private void vibrate() {
         Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        if (vibrator == null) {
-            return;
-        }
+        if (vibrator == null) { return; }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(VibrationEffect.createOneShot(
                     VIBRATION_DURATION_MS, VibrationEffect.DEFAULT_AMPLITUDE));

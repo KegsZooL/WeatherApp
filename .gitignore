@@ -17,3 +17,6 @@ local.properties
 /.idea/
 *.idea
 .idea
+gradlew
+gradlew.bat
+gradle

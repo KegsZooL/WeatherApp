@@ -26,7 +26,7 @@ final class WeatherNotificationManager {
     }
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    static void showWeatherNotification(Context context, Weather.WeatherData data) {
+    static void showWeatherNotification(Context context, WeatherData data) {
         if (context == null || data == null) {
             return;
         }
@@ -35,8 +35,8 @@ final class WeatherNotificationManager {
         createChannelIfNeeded(appContext, notificationManager);
 
         PendingIntent contentIntent = buildContentIntent(appContext);
-        String title = resolveTitle(appContext, data.getLocation());
-        String content = buildContentText(data.getTemperature(), data.getDescription());
+        String title = resolveTitle(appContext, data.location());
+        String content = buildContentText(data.temperature(), data.description());
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(appContext, CHANNEL_ID)
                 .setSmallIcon(resolveSmallIcon())
@@ -51,7 +51,7 @@ final class WeatherNotificationManager {
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(content));
 
-        Bitmap largeIcon = loadLargeIcon(appContext, data.getConditionId());
+        Bitmap largeIcon = loadLargeIcon(appContext, data.conditionId());
         if (largeIcon != null) {
             builder.setLargeIcon(largeIcon);
         }

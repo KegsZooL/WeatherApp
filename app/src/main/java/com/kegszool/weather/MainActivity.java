@@ -1,6 +1,7 @@
 package com.kegszool.weather;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
@@ -39,19 +40,25 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+
 public class MainActivity extends AppCompatActivity implements Weather.Callback {
+
+    private static final Map<String, String> POPULAR_CITIES = PopularCities.getCities();
 
     private static final String TAG = "MainActivity";
     private static final String DEFAULT_CITY = "Moscow";
     private static final String NOT_FOUND_MSG_FALLBACK = "city not found";
-    private static final long VIBRATION_DURATION_MS = 15L;
     private static final String CITY_SUGGESTION_SEPARATOR = " / ";
-    private static final Map<String, String> POPULAR_CITIES = PopularCities.getCities();
+    private static final String ENDPOINT_FORMAT_FOR_CITY = "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric%s";
+    private static final String ENDPOINT_FORMAT_FOR_COORDINATES = "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric%s";
+
+    private static final long VIBRATION_DURATION_MS = 15L;
     private static final int REQUEST_CODE_MAP_PICK = 1001;
 
     private GpsTracker gpsTracker;
-
     private ConstraintLayout rootLayout;
+    private Weather currentTask;
+
     private TextView locationView;
     private TextView descriptionView;
     private TextView humidityView;
@@ -59,24 +66,29 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private TextView mainTempView;
     private TextView windSpeedView;
     private TextView visibilityView;
+
     private AutoCompleteTextView searchView;
     private ForecastViewHolder[] forecastHolders;
     private ArrayAdapter<String> citySuggestionsAdapter;
 
-    private Weather currentTask;
-    private String lastSearchedCity = DEFAULT_CITY;
     private String apiKey;
+    private String lastSearchedCity = DEFAULT_CITY;
     private int currentBackgroundResId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
         rootLayout = findViewById(R.id.main);
         if (rootLayout != null) {
             currentBackgroundResId = R.drawable.main_bg;
-            ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, insets) -> {
+
+            ViewCompat.setOnApplyWindowInsetsListener(
+                    rootLayout, (v, insets
+            ) -> {
                 Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                 v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
                 return WindowInsetsCompat.CONSUMED;
@@ -128,6 +140,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         visibilityView.setText(data.getVisibility());
         renderDailyForecasts(data.getDailyForecasts());
         updateBackground(data);
+
         WeatherNotificationManager.showWeatherNotification(this, data);
         LastWeatherStorage.save(this, data);
         WeatherWidgetProvider.requestUpdate(this);
@@ -146,6 +159,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     private void bindViews() {
+
         searchView = findViewById(R.id.search);
         locationView = findViewById(R.id.city);
         descriptionView = findViewById(R.id.description);
@@ -172,16 +186,33 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         TextView day4Temp = findViewById(R.id.day4temp);
 
         forecastHolders = new ForecastViewHolder[]{
-                new ForecastViewHolder(getParentOrSelf(day1Label), day1Label, day1Icon, day1Temp),
-                new ForecastViewHolder(getParentOrSelf(day2Label), day2Label, day2Icon, day2Temp),
-                new ForecastViewHolder(getParentOrSelf(day3Label), day3Label, day3Icon, day3Temp),
-                new ForecastViewHolder(getParentOrSelf(day4Label), day4Label, day4Icon, day4Temp)
+                new ForecastViewHolder(
+                    getParentOrSelf(day1Label),
+                    day1Label,
+                    day1Icon,
+                    day1Temp
+                ),
+                new ForecastViewHolder(
+                    getParentOrSelf(day2Label),
+                    day2Label,
+                    day2Icon,
+                    day2Temp
+                ),
+                new ForecastViewHolder(
+                    getParentOrSelf(day3Label),
+                    day3Label,
+                    day3Icon,
+                    day3Temp
+                ),
+                new ForecastViewHolder(
+                	getParentOrSelf(day4Label),
+                    day4Label,
+                    day4Icon,
+                    day4Temp
+                )
         };
-
-        renderDailyForecasts(null);
         setupMetricTooltips();
         setupCityClickListener();
-
         searchView.clearFocus();
     }
 
@@ -199,7 +230,11 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     private void handleCitySearch() {
         String inputCity = searchView.getText().toString().trim();
         if (inputCity.isEmpty()) {
-            Toast.makeText(getApplicationContext(), "Please enter a city!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(
+                getApplicationContext(),
+                "Please enter a city!",
+                Toast.LENGTH_SHORT
+            ).show();
             vibrate();
             if (!TextUtils.isEmpty(lastSearchedCity)) {
                 requestWeatherByCity(lastSearchedCity);
@@ -213,19 +248,28 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     private void setupCitySuggestions() {
-        citySuggestionsAdapter = new ArrayAdapter<>(this, R.layout.item_city_suggestion, R.id.citySuggestionText, new ArrayList<>());
+
+        citySuggestionsAdapter = new ArrayAdapter<>(
+            this,
+            R.layout.item_city_suggestion,
+        	R.id.citySuggestionText,
+            new ArrayList<>()
+        );
+
         searchView.setAdapter(citySuggestionsAdapter);
         searchView.setDropDownBackgroundResource(R.drawable.autocomplete_dropdown_bg);
         searchView.setThreshold(0);
+
         searchView.setOnItemClickListener((parent, view, position, id) -> {
-            if (parent == null || position < 0 || position >= parent.getCount()) {
+            if (parent == null || position < 0 ||
+                    position >= parent.getCount()
+            ) {
                 return;
             }
             Object item = parent.getItemAtPosition(position);
             String suggestion = item != null ? item.toString() : null;
-            if (suggestion == null) {
-                return;
-            }
+            if (suggestion == null) { return; }
+
             String englishName = extractEnglishCityName(suggestion);
             if (!TextUtils.isEmpty(englishName)) {
                 searchView.setText(englishName);
@@ -239,13 +283,22 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             }
         });
         searchView.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
+            public void beforeTextChanged(
+                CharSequence s,
+                int start,
+                int count,
+                int after
+            ) {}
+
+            @Override
+            public void onTextChanged(
+                CharSequence s,
+                int start,
+                int before,
+                int count
+            ) {}
 
             @Override
             public void afterTextChanged(Editable s) {
@@ -281,11 +334,15 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             return cityInput;
         }
         String englishFromLabel = extractEnglishCityName(cityInput);
-        if (!TextUtils.isEmpty(englishFromLabel) && POPULAR_CITIES.containsKey(englishFromLabel)) {
+        if (!TextUtils.isEmpty(englishFromLabel)
+                && POPULAR_CITIES.containsKey(englishFromLabel)
+        ) {
             return englishFromLabel;
         }
         for (Map.Entry<String, String> entry : POPULAR_CITIES.entrySet()) {
-            if (cityInput.equalsIgnoreCase(entry.getKey()) || cityInput.equalsIgnoreCase(entry.getValue())) {
+            if (cityInput.equalsIgnoreCase(entry.getKey()) ||
+                    cityInput.equalsIgnoreCase(entry.getValue())
+            ) {
                 return entry.getKey();
             }
         }
@@ -318,7 +375,11 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         View.OnClickListener tooltipListener = view -> {
             int messageResId = getTooltipMessageResId(view.getId());
             if (messageResId != 0) {
-                Toast.makeText(getApplicationContext(), messageResId, Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                    getApplicationContext(),
+                    messageResId,
+                    Toast.LENGTH_SHORT
+                ).show();
             }
         };
         if (windSpeedView != null) {
@@ -375,7 +436,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         }
     }
 
-
+    @SuppressLint("MissingPermission")
     private void fetchWeatherForCurrentLocation() {
         gpsTracker = new GpsTracker(this);
         if (gpsTracker.canGetLocation()) {
@@ -397,14 +458,14 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
     private void requestWeatherByCity(String cityName) {
         if (TextUtils.isEmpty(apiKey)) {
-            notifyMissingApiKey();
+            onError("API key is missing. Please check configuration.");
             return;
         }
         try {
             String encodedCity = URLEncoder.encode(cityName, "UTF-8");
             String endpoint = String.format(
                     Locale.US,
-                    "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric%s",
+                    ENDPOINT_FORMAT_FOR_CITY,
                     encodedCity,
                     apiKey,
                     getApiLanguageQuery()
@@ -418,12 +479,12 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
     private void requestWeatherByCoordinates(double latitude, double longitude) {
         if (TextUtils.isEmpty(apiKey)) {
-            notifyMissingApiKey();
+            onError("API key is missing. Please check configuration.");
             return;
         }
         String endpoint = String.format(
                 Locale.US,
-                "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric%s",
+                ENDPOINT_FORMAT_FOR_COORDINATES,
                 latitude,
                 longitude,
                 apiKey,
@@ -498,6 +559,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
     }
 
     private void renderDailyForecasts(List<Weather.WeatherData.DailyForecast> forecasts) {
+
         if (forecastHolders == null || forecastHolders.length == 0) {
             return;
         }
@@ -581,10 +643,6 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             this.iconView = iconView;
             this.temperatureView = temperatureView;
         }
-    }
-
-    private void notifyMissingApiKey() {
-        onError("API key is missing. Please check configuration.");
     }
 
     private void vibrate() {

@@ -1,3 +1,7 @@
+[0.0.2]
+
+- Switching to FusedLocationProviderClient in GPS tracking logic
+
 [0.0.1]
 
 - City search with ru/en suggestions via AutoCompleteTextView.

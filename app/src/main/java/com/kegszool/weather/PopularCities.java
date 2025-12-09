@@ -4,14 +4,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-final class PopularCities {
+public final class PopularCities {
 
     private static final Map<String, String> CITIES = createCities();
 
-    private PopularCities() {
-    }
+    private PopularCities() {}
 
-    static Map<String, String> getCities() {
+    public static Map<String, String> getCities() {
         return CITIES;
     }
 

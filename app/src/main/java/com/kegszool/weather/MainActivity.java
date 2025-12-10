@@ -33,8 +33,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -49,17 +47,12 @@ public class MainActivity extends AppCompatActivity implements WeatherService.Ca
     private static final String NOT_FOUND_MSG_FALLBACK = "city not found";
     private static final String CITY_SUGGESTION_SEPARATOR = " / ";
 
-    private static final String ENDPOINT_FORMAT_FOR_CITY =
-            "https://api.openweathermap.org/data/2.5/forecast?q=%s&appid=%s&units=metric%s";
-    private static final String ENDPOINT_FORMAT_FOR_COORDINATES =
-            "https://api.openweathermap.org/data/2.5/forecast?lat=%.6f&lon=%.6f&appid=%s&units=metric%s";
-
     private static final long VIBRATION_DURATION_MS = 15L;
     private static final int REQUEST_CODE_MAP_PICK = 1001;
 
     private GpsTracker gpsTracker;
     private ConstraintLayout rootLayout;
-    private WeatherService currentTask;
+    private WeatherRouter weatherRouter;
 
     private TextView locationView;
     private TextView descriptionView;
@@ -97,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements WeatherService.Ca
             });
         }
         apiKey = BuildConfig.OPEN_WEATHER_API_KEY;
+        weatherRouter = new WeatherRouter(apiKey, this);
 
         bindViews();
         setupSearch();
@@ -114,9 +108,8 @@ public class MainActivity extends AppCompatActivity implements WeatherService.Ca
 
     @Override
     protected void onDestroy() {
-        if (currentTask != null) {
-            currentTask.cancel();
-            currentTask = null;
+        if (weatherRouter != null) {
+            weatherRouter.cancel();
         }
         if (gpsTracker != null) {
             gpsTracker.stopUsingGPS();
@@ -246,14 +239,14 @@ public class MainActivity extends AppCompatActivity implements WeatherService.Ca
             ).show();
             vibrate();
             if (!TextUtils.isEmpty(lastSearchedCity)) {
-                requestWeatherByCity(lastSearchedCity);
+                weatherRouter.requestWeatherByCity(lastSearchedCity);
             }
             return;
         }
         String normalizedCity = normalizeCityInput(inputCity);
         lastSearchedCity = normalizedCity;
         searchView.dismissDropDown();
-        requestWeatherByCity(normalizedCity);
+        weatherRouter.requestWeatherByCity(normalizedCity);
     }
 
     private void setupCitySuggestions() {
@@ -455,7 +448,7 @@ public class MainActivity extends AppCompatActivity implements WeatherService.Ca
                         : String.format(Locale.getDefault(), "%.4f, %.4f", lat, lng);
                 locationView.setText(displayLabel);
                 lastSearchedCity = displayLabel;
-                requestWeatherByCoordinates(lat, lng);
+                weatherRouter.requestWeatherByCoordinates(lat, lng);
             }
         }
     }
@@ -475,67 +468,10 @@ public class MainActivity extends AppCompatActivity implements WeatherService.Ca
                     longitude = lastKnownLocation.getLongitude();
                 }
             }
-            requestWeatherByCoordinates(latitude, longitude);
+            weatherRouter.requestWeatherByCoordinates(latitude, longitude);
         } else {
             gpsTracker.showSettingsAlert();
         }
-    }
-
-    private void requestWeatherByCity(String cityName) {
-        if (TextUtils.isEmpty(apiKey)) {
-            onError("API key is missing. Please check configuration.");
-            return;
-        }
-        try {
-            String encodedCity = URLEncoder.encode(cityName, "UTF-8");
-            String endpoint = String.format(
-                    Locale.US,
-                    ENDPOINT_FORMAT_FOR_CITY,
-                    encodedCity,
-                    apiKey,
-                    getApiLanguageQuery()
-            );
-            executeWeatherRequest(endpoint);
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, "Unable to encode city name", e);
-            onError("Unable to search for city");
-        }
-    }
-
-    private void requestWeatherByCoordinates(double latitude, double longitude) {
-        if (TextUtils.isEmpty(apiKey)) {
-            onError("API key is missing. Please check configuration.");
-            return;
-        }
-        String endpoint = String.format(
-                Locale.US,
-                ENDPOINT_FORMAT_FOR_COORDINATES,
-                latitude,
-                longitude,
-                apiKey,
-                getApiLanguageQuery()
-        );
-        executeWeatherRequest(endpoint);
-    }
-
-    private String getApiLanguageQuery() {
-        String language = Locale.getDefault().getLanguage();
-        if ("ru".equalsIgnoreCase(language)) {
-            return "&lang=ru";
-        }
-        return "";
-    }
-
-    private void executeWeatherRequest(String endpoint) {
-        if (TextUtils.isEmpty(endpoint)) {
-            onError("Invalid request");
-            return;
-        }
-        if (currentTask != null) {
-            currentTask.cancel();
-        }
-        currentTask = new WeatherService(this);
-        currentTask.execute(endpoint);
     }
 
     private void updateBackground(WeatherData data) {

@@ -1,6 +1,7 @@
 [0.0.2]
 
 - Switching to FusedLocationProviderClient in GPS tracking logic
+- Refactored weather loading to WeatherService/WeatherRouter and split ForecastViewHolder class.
 
 [0.0.1]
 

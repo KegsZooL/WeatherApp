@@ -99,18 +99,17 @@ final class LastWeatherStorage {
         JSONArray array = new JSONArray();
         final int max = Math.min(4, data.dailyForecasts().size());
         for (int i = 0; i < max; i++) {
+
             WeatherData.DailyForecast forecast = data.dailyForecasts().get(i);
-            if (forecast == null) {
-                continue;
-            }
+            if (forecast == null) { continue; }
+
             JSONObject obj = new JSONObject();
             try {
                 obj.put("day", forecast.dayLabel());
                 obj.put("temp", forecast.temperature());
                 obj.put("cond", forecast.conditionId());
                 array.put(obj);
-            } catch (JSONException ignored) {
-            }
+            } catch (JSONException ignored) {}
         }
         return array.toString();
     }

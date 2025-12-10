@@ -1,3 +1,8 @@
+[0.0.2]
+
+- Переход на FusedLocationProviderClient для логики GPS-отслеживания 
+- Рефакторинг загрузки погоды (WeatherService/WeatherRouter) и вынос логики ForecastViewHolder.
+
 [0.0.1]
 
 - Поиск города с подсказками (ru/en) через AutoCompleteTextView.

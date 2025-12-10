@@ -127,10 +127,11 @@ public class WeatherService {
                 return WeatherData.Result.error(parseErrorMessage(payload));
             }
         } catch (IOException | JSONException e) {
-            Log.e(TAG, "Failed to load weather data", e);
+            var msg = "Failed to load weather data";
+            Log.e(TAG, msg, e);
             return WeatherData.Result.error(e.getMessage() != null
                     ? e.getMessage()
-                    : "Failed to load weather data");
+                    : msg);
         } finally {
             closeQuietly(reader);
             closeQuietly(stream);
@@ -159,8 +160,14 @@ public class WeatherService {
         }
     }
 
-    private InputStream maybeUnzip(HttpURLConnection connection, InputStream source) throws IOException {
-        String encoding = connection != null ? connection.getContentEncoding() : null;
+    private InputStream maybeUnzip(
+        HttpURLConnection connection,
+        InputStream source
+    ) throws IOException {
+        String encoding = connection != null
+                ? connection.getContentEncoding()
+                : null;
+
         if ("gzip".equalsIgnoreCase(encoding)) {
             return new GZIPInputStream(source, IO_BUFFER_SIZE);
         }
@@ -171,7 +178,9 @@ public class WeatherService {
         if (stream != null) {
             try {
                 stream.close();
-            } catch (IOException ignored) {} //TODO: must be processing
+            } catch (IOException ignored) {
+                 Log.e(TAG, "Failed to close InputStream");
+            }
         }
     }
 
@@ -179,7 +188,9 @@ public class WeatherService {
         if (reader != null) {
             try {
                 reader.close();
-            } catch (IOException ignored) {} //TODO: must be processing
+            } catch (IOException ignored) {
+                Log.e(TAG, "Failed to close BufferedReader");
+            }
         }
     }
 
@@ -284,10 +295,7 @@ public class WeatherService {
             }
             String dayLabel = formatDayLabel(
                     forecastObject.optString("dt_txt", ""),
-                    entry.getKey(),
-                    INPUT_FORMAT,
-                    FALLBACK_INPUT_FORMAT,
-                    DAY_FORMAT
+                    entry.getKey()
             );
 
             JSONObject mainObject = forecastObject.optJSONObject("main");
@@ -318,22 +326,19 @@ public class WeatherService {
 
     private String formatDayLabel(
         String dateTime,
-        String fallbackDate,
-        SimpleDateFormat inputFormat,
-        SimpleDateFormat fallbackInputFormat,
-        SimpleDateFormat outputFormat
+        String fallbackDate
     ) {
         Date parsedDate = null;
         if (!TextUtils.isEmpty(dateTime)) {
             try {
-                parsedDate = inputFormat.parse(dateTime);
+                parsedDate = WeatherService.INPUT_FORMAT.parse(dateTime);
             } catch (ParseException ignored) {
             }
         }
 
         if (parsedDate == null && !TextUtils.isEmpty(fallbackDate)) {
             try {
-                parsedDate = fallbackInputFormat.parse(fallbackDate);
+                parsedDate = WeatherService.FALLBACK_INPUT_FORMAT.parse(fallbackDate);
             } catch (ParseException ignored) {
             }
         }
@@ -341,7 +346,7 @@ public class WeatherService {
         if (parsedDate == null) {
             return fallbackDate != null ? fallbackDate : "";
         }
-        return outputFormat.format(parsedDate);
+        return WeatherService.DAY_FORMAT.format(parsedDate);
     }
 
     private String parseLocation(JSONObject cityObject) {
@@ -362,7 +367,7 @@ public class WeatherService {
 
     private String formatVisibility(int visibilityMeters, boolean isRussian) {
         int visibilityKilometers = Math.max(0, visibilityMeters / 1000);
-        return visibilityKilometers + (isRussian ? " км" : " km");
+        	return visibilityKilometers + (isRussian ? " км" : " km");
     }
 
     private String formatDescription(String rawDescription) {
@@ -390,8 +395,7 @@ public class WeatherService {
             if (errorObject.has("message")) {
                 return errorObject.optString("message", "Unable to load weather data");
             }
-        } catch (JSONException ignored) {
-        }
+        } catch (JSONException ignored) {}
         return "Unable to load weather data";
     }
 

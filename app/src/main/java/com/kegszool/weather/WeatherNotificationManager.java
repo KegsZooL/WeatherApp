@@ -17,16 +17,13 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.TaskStackBuilder;
 
-final class WeatherNotificationManager {
+public final class WeatherNotificationManager {
 
     private static final String CHANNEL_ID = "weather_status_channel";
     private static final int NOTIFICATION_ID = 1002;
 
-    private WeatherNotificationManager() {
-    }
-
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    static void showWeatherNotification(Context context, WeatherData data) {
+    public static void showWeatherNotification(Context context, WeatherData data) {
         if (context == null || data == null) {
             return;
         }
@@ -38,7 +35,8 @@ final class WeatherNotificationManager {
         String title = resolveTitle(appContext, data.location());
         String content = buildContentText(data.temperature(), data.description());
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(appContext, CHANNEL_ID)
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(appContext, CHANNEL_ID)
                 .setSmallIcon(resolveSmallIcon())
                 .setContentTitle(title)
                 .setContentText(content)
@@ -58,17 +56,17 @@ final class WeatherNotificationManager {
         notificationManager.notify(NOTIFICATION_ID, builder.build());
     }
 
-    static void cancel(Context context) {
+    public static void cancel(Context context) {
         if (context == null) {
             return;
         }
         NotificationManagerCompat.from(context.getApplicationContext()).cancel(NOTIFICATION_ID);
     }
 
-    private static void createChannelIfNeeded(Context context, NotificationManagerCompat notificationManager) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            return;
-        }
+    private static void createChannelIfNeeded(
+        Context context,
+        NotificationManagerCompat notificationManager
+    ) {
         NotificationChannel existing = notificationManager.getNotificationChannel(CHANNEL_ID);
         if (existing != null) {
             return;
@@ -78,7 +76,9 @@ final class WeatherNotificationManager {
                 context.getString(R.string.weather_notification_channel_name),
                 android.app.NotificationManager.IMPORTANCE_LOW
         );
-        channel.setDescription(context.getString(R.string.weather_notification_channel_description));
+        channel.setDescription(context.getString(
+                R.string.weather_notification_channel_description));
+
         channel.enableVibration(false);
         channel.setShowBadge(false);
         notificationManager.createNotificationChannel(channel);
@@ -103,7 +103,10 @@ final class WeatherNotificationManager {
         return context.getString(R.string.app_name);
     }
 
-    private static String buildContentText(@Nullable String temperatureRaw, @Nullable String descriptionRaw) {
+    private static String buildContentText(
+        @Nullable String temperatureRaw,
+        @Nullable String descriptionRaw
+    ) {
         String temperature = "";
         if (!TextUtils.isEmpty(temperatureRaw)) {
             temperature = temperatureRaw.trim();
@@ -116,7 +119,9 @@ final class WeatherNotificationManager {
             }
         }
 
-        String description = TextUtils.isEmpty(descriptionRaw) ? "" : descriptionRaw.trim();
+        String description = TextUtils.isEmpty(descriptionRaw)
+                ? ""
+                : descriptionRaw.trim();
 
         if (!temperature.isEmpty() && !description.isEmpty()) {
             return temperature + " • " + description;

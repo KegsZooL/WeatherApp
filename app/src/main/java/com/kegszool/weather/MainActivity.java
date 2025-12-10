@@ -40,8 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-
-public class MainActivity extends AppCompatActivity implements Weather.Callback {
+public class MainActivity extends AppCompatActivity implements WeatherService.Callback {
 
     private static final Map<String, String> POPULAR_CITIES = PopularCities.getCities();
 
@@ -60,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
     private GpsTracker gpsTracker;
     private ConstraintLayout rootLayout;
-    private Weather currentTask;
+    private WeatherService currentTask;
 
     private TextView locationView;
     private TextView descriptionView;
@@ -153,12 +152,17 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
     @Override
     public void onError(String message) {
-        String displayMessage = TextUtils.isEmpty(message) ? "UNABLE TO LOAD WEATHER DATA" : message;
+        String displayMessage = TextUtils.isEmpty(message)
+                ? "UNABLE TO LOAD WEATHER DATA"
+                : message;
         if (displayMessage.equals(NOT_FOUND_MSG_FALLBACK)) {
             displayMessage = NOT_FOUND_MSG_FALLBACK.toUpperCase();
             vibrate();
         }
-        Toast.makeText(getApplicationContext(), displayMessage, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(),
+            displayMessage,
+            Toast.LENGTH_SHORT
+        ).show();
         Log.w(TAG, displayMessage);
         WeatherNotificationManager.cancel(this);
     }
@@ -192,28 +196,28 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
         forecastHolders = new ForecastViewHolder[]{
                 new ForecastViewHolder(
-                    getParentOrSelf(day1Label),
-                    day1Label,
-                    day1Icon,
-                    day1Temp
+                        getParentOrSelf(day1Label),
+                        day1Label,
+                        day1Icon,
+                        day1Temp
                 ),
                 new ForecastViewHolder(
-                    getParentOrSelf(day2Label),
-                    day2Label,
-                    day2Icon,
-                    day2Temp
+                        getParentOrSelf(day2Label),
+                        day2Label,
+                        day2Icon,
+                        day2Temp
                 ),
                 new ForecastViewHolder(
-                    getParentOrSelf(day3Label),
-                    day3Label,
-                    day3Icon,
-                    day3Temp
+                        getParentOrSelf(day3Label),
+                        day3Label,
+                        day3Icon,
+                        day3Temp
                 ),
                 new ForecastViewHolder(
-                	getParentOrSelf(day4Label),
-                    day4Label,
-                    day4Icon,
-                    day4Temp
+                        getParentOrSelf(day4Label),
+                        day4Label,
+                        day4Icon,
+                        day4Temp
                 )
         };
         setupMetricTooltips();
@@ -530,7 +534,7 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
         if (currentTask != null) {
             currentTask.cancel();
         }
-        currentTask = new Weather(this);
+        currentTask = new WeatherService(this);
         currentTask.execute(endpoint);
     }
 
@@ -595,29 +599,29 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
 
             if (i < itemsCount) {
                 WeatherData.DailyForecast forecast = forecasts.get(i);
-                if (holder.root != null) {
-                    holder.root.setVisibility(View.VISIBLE);
+                if (holder.root() != null) {
+                    holder.root().setVisibility(View.VISIBLE);
                 }
-                holder.dayLabel.setText(forecast.dayLabel());
-                holder.temperatureView.setText(forecast.temperature());
+                holder.dayLabel().setText(forecast.dayLabel());
+                holder.temperatureView().setText(forecast.temperature());
 
                 String contentDescription = forecast.description();
                 if (TextUtils.isEmpty(contentDescription)) {
                     contentDescription = forecast.dayLabel();
                 }
-                holder.iconView.setContentDescription(contentDescription);
+                holder.iconView().setContentDescription(contentDescription);
 
                 int iconRes = resolveForecastIcon(forecast.conditionId());
-                holder.iconView.setImageResource(iconRes);
+                holder.iconView().setImageResource(iconRes);
 
             } else {
-                if (holder.root != null) {
-                    holder.root.setVisibility(View.INVISIBLE);
+                if (holder.root() != null) {
+                    holder.root().setVisibility(View.INVISIBLE);
                 }
-                holder.dayLabel.setText("");
-                holder.temperatureView.setText("");
-                holder.iconView.setImageDrawable(null);
-                holder.iconView.setContentDescription(null);
+                holder.dayLabel().setText("");
+                holder.temperatureView().setText("");
+                holder.iconView().setImageDrawable(null);
+                holder.iconView().setContentDescription(null);
             }
         }
     }
@@ -651,26 +655,6 @@ public class MainActivity extends AppCompatActivity implements Weather.Callback 
             return (View) parent;
         }
         return view;
-    }
-
-    private static final class ForecastViewHolder {
-
-        private final View root;
-        private final TextView dayLabel;
-        private final ImageView iconView;
-        private final TextView temperatureView;
-
-        ForecastViewHolder(
-                View root,
-                TextView dayLabel,
-                ImageView iconView,
-                TextView temperatureView
-        ) {
-            this.root = root != null ? root : dayLabel;
-            this.dayLabel = dayLabel;
-            this.iconView = iconView;
-            this.temperatureView = temperatureView;
-        }
     }
 
     private void vibrate() {

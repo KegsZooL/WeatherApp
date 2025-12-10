@@ -97,7 +97,7 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
         if (trimmed.endsWith("°")) {
             return trimmed;
         }
-        return trimmed + "\u00B0";
+        return trimmed + "°";
     }
 
     @DrawableRes

@@ -1,5 +1,6 @@
 package com.kegszool.weather;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -25,13 +26,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.zip.GZIPInputStream;
 
-public class Weather {
+public class WeatherService {
 
     private static final String TAG = "WeatherTask";
     private static final int IO_BUFFER_SIZE = 8 * 1024;
@@ -39,17 +39,18 @@ public class Weather {
     private static final int READ_TIMEOUT_MS = 15000;
     private static final int MAX_FORECAST_DAYS = 4;
 
-    private static final ThreadLocal<DecimalFormat> WIND_SPEED_FORMAT = ThreadLocal.withInitial(
-            () -> new DecimalFormat("0.0"));
+    private static final DecimalFormat WIND_SPEED_FORMAT =
+            new DecimalFormat("0.0");
 
-    private static final ThreadLocal<SimpleDateFormat> INPUT_FORMAT = ThreadLocal.withInitial(
-            () -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US));
+    private static final SimpleDateFormat INPUT_FORMAT =
+            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
 
-    private static final ThreadLocal<SimpleDateFormat> FALLBACK_INPUT_FORMAT = ThreadLocal.withInitial(
-            () -> new SimpleDateFormat("yyyy-MM-dd", Locale.US));
+    private static final SimpleDateFormat FALLBACK_INPUT_FORMAT =
+            new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
-    private static final ThreadLocal<SimpleDateFormat> DAY_FORMAT = ThreadLocal.withInitial(
-            () -> new SimpleDateFormat("EEE", Locale.getDefault()));
+    @SuppressLint("ConstantLocale")
+    private static final SimpleDateFormat DAY_FORMAT =
+            new SimpleDateFormat("EEE", Locale.getDefault());
 
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
@@ -62,7 +63,7 @@ public class Weather {
     private final Callback callback;
     private Future<?> runningTask;
 
-    public Weather(Callback callback) {
+    public WeatherService(Callback callback) {
         this.callback = callback;
     }
 
@@ -73,7 +74,7 @@ public class Weather {
         }
         cancel();
         runningTask = EXECUTOR.submit(() -> {
-            Result result = load(endpoint);
+            WeatherData.Result result = load(endpoint);
             MAIN_HANDLER.post(() -> deliverResult(result));
         });
     }
@@ -85,7 +86,7 @@ public class Weather {
         }
     }
 
-    private Result load(String endpoint) {
+    private WeatherData.Result load(String endpoint) {
 
         HttpURLConnection connection = null;
         InputStream stream = null;
@@ -105,7 +106,7 @@ public class Weather {
                     : connection.getErrorStream();
 
             if (stream == null) {
-                return Result.error("No response from server");
+                return WeatherData.Result.error("No response from server");
             }
             stream = maybeUnzip(connection, stream);
             reader = new BufferedReader(new InputStreamReader(
@@ -121,13 +122,13 @@ public class Weather {
             if (responseCode >= HttpURLConnection.HTTP_OK &&
                     responseCode < HttpURLConnection.HTTP_MULT_CHOICE
             ) {
-                return Result.success(parseWeather(payload));
+                return WeatherData.Result.success(parseWeather(payload));
             } else {
-                return Result.error(parseErrorMessage(payload));
+                return WeatherData.Result.error(parseErrorMessage(payload));
             }
         } catch (IOException | JSONException e) {
             Log.e(TAG, "Failed to load weather data", e);
-            return Result.error(e.getMessage() != null
+            return WeatherData.Result.error(e.getMessage() != null
                     ? e.getMessage()
                     : "Failed to load weather data");
         } finally {
@@ -139,7 +140,7 @@ public class Weather {
         }
     }
 
-    private void deliverResult(Result result) {
+    private void deliverResult(WeatherData.Result result) {
         if (callback == null) {
             return;
         }
@@ -228,8 +229,7 @@ public class Weather {
         if (windObject != null) {
             double windMetersPerSecond = windObject.optDouble("speed", 0d);
             double windKilometersPerHour = windMetersPerSecond * 3.6d;
-            windSpeed = Objects.requireNonNull(WIND_SPEED_FORMAT.get())
-                    .format(windKilometersPerHour) + (isRussian ? " км/ч" : " km/h");
+            windSpeed = WIND_SPEED_FORMAT.format(windKilometersPerHour) + (isRussian ? " км/ч" : " km/h");
         }
 
         int visibilityValue = firstForecast.optInt("visibility", 0);
@@ -273,10 +273,6 @@ public class Weather {
             }
         }
 
-        SimpleDateFormat inputFormat = INPUT_FORMAT.get();
-        SimpleDateFormat fallbackInputFormat = FALLBACK_INPUT_FORMAT.get();
-        SimpleDateFormat dayFormat = DAY_FORMAT.get();
-
         List<WeatherData.DailyForecast> results = new ArrayList<>();
         for (Map.Entry<String, JSONObject> entry : dayToForecast.entrySet()) {
             if (results.size() >= MAX_FORECAST_DAYS) {
@@ -289,9 +285,9 @@ public class Weather {
             String dayLabel = formatDayLabel(
                     forecastObject.optString("dt_txt", ""),
                     entry.getKey(),
-                    inputFormat,
-                    fallbackInputFormat,
-                    dayFormat
+                    INPUT_FORMAT,
+                    FALLBACK_INPUT_FORMAT,
+                    DAY_FORMAT
             );
 
             JSONObject mainObject = forecastObject.optJSONObject("main");
@@ -401,36 +397,5 @@ public class Weather {
 
     private boolean isRussianLocale() {
         return "ru".equalsIgnoreCase(Locale.getDefault().getLanguage());
-    }
-
-    static final class Result {
-
-        private final WeatherData data;
-        private final String error;
-
-        private Result(WeatherData data, String error) {
-            this.data = data;
-            this.error = error;
-        }
-
-        static Result success(WeatherData data) {
-            return new Result(data, null);
-        }
-
-        static Result error(String message) {
-            return new Result(null, message);
-        }
-
-        boolean isSuccess() {
-            return data != null;
-        }
-
-        WeatherData getData() {
-            return data;
-        }
-
-        String getError() {
-            return error;
-        }
     }
 }

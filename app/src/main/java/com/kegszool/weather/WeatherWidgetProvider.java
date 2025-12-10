@@ -57,7 +57,9 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
         LastWeatherStorage.WeatherSnapshot snapshot = LastWeatherStorage.read(context);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_weather);
 
-        String cityLabel = !TextUtils.isEmpty(snapshot.city()) ? snapshot.city() : context.getString(R.string.city_placeholder);
+        String cityLabel = !TextUtils.isEmpty(snapshot.city())
+                ? snapshot.city()
+                : context.getString(R.string.city_placeholder);
         views.setTextViewText(R.id.widgetCity, cityLabel);
 
         bindForecasts(views, snapshot);
@@ -69,7 +71,6 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
         );
         views.setOnClickPendingIntent(R.id.widgetContainer, openApp);
-
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 

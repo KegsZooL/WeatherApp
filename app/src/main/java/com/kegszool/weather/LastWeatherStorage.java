@@ -8,7 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-final class LastWeatherStorage {
+public final class LastWeatherStorage {
 
     private static final String PREF_NAME = "last_weather_storage";
     private static final String KEY_CITY = "city";
@@ -17,7 +17,7 @@ final class LastWeatherStorage {
     private static final String KEY_FORECASTS = "forecasts";
 
 
-    static void save(Context context, WeatherData data) {
+    public static void save(Context context, WeatherData data) {
         if (context == null || data == null) {
             return;
         }
@@ -30,7 +30,7 @@ final class LastWeatherStorage {
                 .apply();
     }
 
-    static WeatherSnapshot read(Context context) {
+    public static WeatherSnapshot read(Context context) {
         if (context == null) {
             return WeatherSnapshot.empty();
         }
@@ -46,7 +46,7 @@ final class LastWeatherStorage {
         String city,
         String temperature,
         int conditionId,
-       ForecastSnapshot[] forecasts
+       	ForecastSnapshot[] forecasts
     ) {
         public WeatherSnapshot(
             String city,

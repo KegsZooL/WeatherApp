@@ -597,11 +597,7 @@ public class MainActivity extends AppCompatActivity implements WeatherService.Ca
         Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator == null) { return; }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createOneShot(
-                    VIBRATION_DURATION_MS, VibrationEffect.DEFAULT_AMPLITUDE));
-        } else {
-            vibrator.vibrate(VIBRATION_DURATION_MS);
-        }
+        vibrator.vibrate(VibrationEffect.createOneShot(
+                VIBRATION_DURATION_MS, VibrationEffect.DEFAULT_AMPLITUDE));
     }
 }

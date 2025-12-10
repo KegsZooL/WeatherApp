@@ -21,7 +21,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.Locale;
 
-public class MapPickerActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapClickListener {
+public class MapPickerActivity extends FragmentActivity
+        implements OnMapReadyCallback, GoogleMap.OnMapClickListener
+{
 
     public static final String EXTRA_LATITUDE = "extra_latitude";
     public static final String EXTRA_LONGITUDE = "extra_longitude";
@@ -44,13 +46,13 @@ public class MapPickerActivity extends FragmentActivity implements OnMapReadyCal
         overlayContainer = findViewById(R.id.mapOverlayContainer);
         Button confirmButton = findViewById(R.id.confirmSelection);
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.mapFragment);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.mapFragment);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         } else {
             Toast.makeText(this, R.string.map_no_selection, Toast.LENGTH_SHORT).show();
         }
-
         confirmButton.setOnClickListener(v -> returnSelection());
     }
 
@@ -91,7 +93,8 @@ public class MapPickerActivity extends FragmentActivity implements OnMapReadyCal
         if (overlayContainer == null) {
             return;
         }
-        overlayContainer.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+        overlayContainer.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 if (overlayContainer.getHeight() > 0) {
@@ -110,7 +113,8 @@ public class MapPickerActivity extends FragmentActivity implements OnMapReadyCal
     }
 
     private String formatLatLng(double latitude, double longitude) {
-        return String.format(Locale.getDefault(), getString(R.string.map_selection_fallback), latitude, longitude);
+        return String.format(Locale.getDefault(),
+                getString(R.string.map_selection_fallback), latitude, longitude);
     }
 
     private void returnSelection() {

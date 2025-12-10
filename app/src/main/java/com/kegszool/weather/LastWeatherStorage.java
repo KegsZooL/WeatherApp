@@ -16,8 +16,6 @@ final class LastWeatherStorage {
     private static final String KEY_CONDITION_ID = "conditionId";
     private static final String KEY_FORECASTS = "forecasts";
 
-    private LastWeatherStorage() {
-    }
 
     static void save(Context context, WeatherData data) {
         if (context == null || data == null) {
@@ -44,36 +42,52 @@ final class LastWeatherStorage {
         return new WeatherSnapshot(city, temperature, conditionId, parseForecasts(forecastsRaw));
     }
 
-    static final class WeatherSnapshot {
-        final String city;
-        final String temperature;
-        final int conditionId;
-        final ForecastSnapshot[] forecasts;
-
-        WeatherSnapshot(String city, String temperature, int conditionId, ForecastSnapshot[] forecasts) {
-            this.city = city != null ? city : "";
-            this.temperature = temperature != null ? temperature : "";
+    public record WeatherSnapshot(
+        String city,
+        String temperature,
+        int conditionId,
+       ForecastSnapshot[] forecasts
+    ) {
+        public WeatherSnapshot(
+            String city,
+            String temperature,
+            int conditionId,
+            ForecastSnapshot[] forecasts
+        ) {
+            this.city = city != null
+                    ? city
+                    : "";
+            this.temperature = temperature != null
+                    ? temperature
+                    : "";
+            this.forecasts = forecasts != null
+                    ? forecasts
+                    : new ForecastSnapshot[0];
             this.conditionId = conditionId;
-            this.forecasts = forecasts != null ? forecasts : new ForecastSnapshot[0];
         }
 
-        static WeatherSnapshot empty() {
-            return new WeatherSnapshot("", "", 0, new ForecastSnapshot[0]);
-        }
-
-        boolean hasData() {
-            return !TextUtils.isEmpty(city) || !TextUtils.isEmpty(temperature);
+        public static WeatherSnapshot empty() {
+            return new WeatherSnapshot(
+                    "", "", 0, new ForecastSnapshot[0]);
         }
     }
 
-    static final class ForecastSnapshot {
-        final String dayLabel;
-        final String temperature;
-        final int conditionId;
-
-        ForecastSnapshot(String dayLabel, String temperature, int conditionId) {
-            this.dayLabel = dayLabel != null ? dayLabel : "";
-            this.temperature = temperature != null ? temperature : "";
+    public record ForecastSnapshot(
+        String dayLabel,
+        String temperature,
+        int conditionId
+    ) {
+        public ForecastSnapshot(
+            String dayLabel,
+            String temperature,
+            int conditionId
+        ) {
+            this.dayLabel = dayLabel != null
+                    ? dayLabel
+                    : "";
+            this.temperature = temperature != null
+                    ? temperature
+                    : "";
             this.conditionId = conditionId;
         }
     }
@@ -102,17 +116,21 @@ final class LastWeatherStorage {
     }
 
     private static ForecastSnapshot[] parseForecasts(String raw) {
+
         if (TextUtils.isEmpty(raw)) {
             return new ForecastSnapshot[0];
         }
         try {
+
             JSONArray array = new JSONArray(raw);
             int count = Math.min(4, array.length());
             ForecastSnapshot[] snapshots = new ForecastSnapshot[count];
+
             for (int i = 0; i < count; i++) {
                 JSONObject obj = array.optJSONObject(i);
                 if (obj == null) {
-                    snapshots[i] = new ForecastSnapshot("", "", 0);
+                    snapshots[i] = new ForecastSnapshot(
+                            "", "", 0);
                     continue;
                 }
                 String day = obj.optString("day", "");
@@ -121,8 +139,6 @@ final class LastWeatherStorage {
                 snapshots[i] = new ForecastSnapshot(day, temp, cond);
             }
             return snapshots;
-        } catch (JSONException e) {
-            return new ForecastSnapshot[0];
-        }
+        } catch (JSONException e) { return new ForecastSnapshot[0]; }
     }
 }

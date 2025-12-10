@@ -12,46 +12,55 @@ import android.widget.RemoteViews;
 import androidx.annotation.DrawableRes;
 
 public class WeatherWidgetProvider extends AppWidgetProvider {
+
     private static final int[] DAY_LABEL_IDS = {
-            R.id.widgetDay1Label, R.id.widgetDay2Label, R.id.widgetDay3Label, R.id.widgetDay4Label
+        R.id.widgetDay1Label, R.id.widgetDay2Label, R.id.widgetDay3Label, R.id.widgetDay4Label
     };
+
     private static final int[] DAY_TEMP_IDS = {
-            R.id.widgetDay1Temp, R.id.widgetDay2Temp, R.id.widgetDay3Temp, R.id.widgetDay4Temp
+        R.id.widgetDay1Temp, R.id.widgetDay2Temp, R.id.widgetDay3Temp, R.id.widgetDay4Temp
     };
+
     private static final int[] DAY_ICON_IDS = {
-            R.id.widgetDay1Icon, R.id.widgetDay2Icon, R.id.widgetDay3Icon, R.id.widgetDay4Icon
+        R.id.widgetDay1Icon, R.id.widgetDay2Icon, R.id.widgetDay3Icon, R.id.widgetDay4Icon
     };
 
     @Override
-    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+    public void onUpdate(
+        Context context,
+        AppWidgetManager appWidgetManager,
+        int[] appWidgetIds
+    ) {
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
         }
     }
 
     static void requestUpdate(Context context) {
-        if (context == null) {
-            return;
-        }
+        if (context == null) { return; }
+
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         ComponentName componentName = new ComponentName(context, WeatherWidgetProvider.class);
         int[] widgetIds = manager.getAppWidgetIds(componentName);
-        if (widgetIds == null || widgetIds.length == 0) {
-            return;
-        }
+        if (widgetIds == null) { return; }
+
         for (int widgetId : widgetIds) {
             updateAppWidget(context, manager, widgetId);
         }
     }
 
-    private static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+    private static void updateAppWidget(
+        Context context,
+        AppWidgetManager appWidgetManager,
+        int appWidgetId
+    ) {
         LastWeatherStorage.WeatherSnapshot snapshot = LastWeatherStorage.read(context);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_weather);
 
-        String cityLabel = !TextUtils.isEmpty(snapshot.city) ? snapshot.city : context.getString(R.string.city_placeholder);
+        String cityLabel = !TextUtils.isEmpty(snapshot.city()) ? snapshot.city() : context.getString(R.string.city_placeholder);
         views.setTextViewText(R.id.widgetCity, cityLabel);
 
-        bindForecasts(context, views, snapshot);
+        bindForecasts(views, snapshot);
 
         PendingIntent openApp = PendingIntent.getActivity(
                 context,
@@ -64,25 +73,33 @@ public class WeatherWidgetProvider extends AppWidgetProvider {
         appWidgetManager.updateAppWidget(appWidgetId, views);
     }
 
-    private static void bindForecasts(Context context, RemoteViews views, LastWeatherStorage.WeatherSnapshot snapshot) {
-        if (views == null) {
-            return;
-        }
-        LastWeatherStorage.ForecastSnapshot[] forecasts = snapshot.forecasts;
+    private static void bindForecasts(
+        RemoteViews views,
+        LastWeatherStorage.WeatherSnapshot snapshot
+    ) {
+        if (views == null) { return; }
+
+        LastWeatherStorage.ForecastSnapshot[] forecasts = snapshot.forecasts();
         for (int i = 0; i < DAY_LABEL_IDS.length; i++) {
+
             String label = "—";
             String temp = "—";
             int icon = resolveIcon(0);
 
             if (forecasts != null && i < forecasts.length && forecasts[i] != null) {
-                label = !TextUtils.isEmpty(forecasts[i].dayLabel) ? forecasts[i].dayLabel : label;
-                temp = !TextUtils.isEmpty(forecasts[i].temperature) ? formatTemperature(forecasts[i].temperature) : temp;
-                icon = resolveIcon(forecasts[i].conditionId);
-            } else if (i == 0) {
-                temp = formatTemperature(snapshot.temperature);
-                icon = resolveIcon(snapshot.conditionId);
-            }
 
+                label = !TextUtils.isEmpty(forecasts[i].dayLabel())
+                        ? forecasts[i].dayLabel()
+                        : label;
+                temp = !TextUtils.isEmpty(forecasts[i].temperature())
+                        ? formatTemperature(forecasts[i].temperature())
+                        : temp;
+
+                icon = resolveIcon(forecasts[i].conditionId());
+            } else if (i == 0) {
+                temp = formatTemperature(snapshot.temperature());
+                icon = resolveIcon(snapshot.conditionId());
+            }
             views.setTextViewText(DAY_LABEL_IDS[i], label);
             views.setTextViewText(DAY_TEMP_IDS[i], temp);
             views.setImageViewResource(DAY_ICON_IDS[i], icon);
